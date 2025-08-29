@@ -18,7 +18,8 @@ router.post('/login', async (req, res) => {
         const query = `
             SELECT * FROM lg_in($1, $2, $3);
         `;
-        const result = await pool.query(query, [empresa_id, username, senha]);
+        const result = await pool.query(query, [empresa_id.toString(), username, senha]);
+
 
         // Retorna o primeiro registro da procedure
         return res.json(result.rows[0]);
