@@ -19,9 +19,10 @@ app.get('/', (req, res) => {
 // Rotas de autenticação
 app.use('/api', authRoutes);
 
+// Rotas de empresas
+app.use('/api', empresasRoutes);
+
 // Inicia servidor
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });
-
-app.use('/api', empresasRoutes);
