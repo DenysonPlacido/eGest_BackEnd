@@ -17,7 +17,6 @@ router.post('/login', async (req, res) => {
 
         const result = await pool.query(query, [empresa_id, username, senha]);
         return res.json(result.rows[0]);
-
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: 'Erro interno no servidor' });
