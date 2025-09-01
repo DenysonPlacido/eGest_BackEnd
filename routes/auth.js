@@ -1,8 +1,36 @@
 // /workspaces/eGest_BackEnd/routes/auth.js
 import express from 'express';
 import { pool } from '../db.js'; // Certifique-se que db.js exporta 'pool'
+import jwt from 'jsonwebtoken';
+
 
 const router = express.Router();
+
+// ... dentro do router.post('/login')
+const usuario = result.rows[0];
+
+if (!usuario || !usuario.usuario_id) {
+  return res.status(401).json({ message: 'Credenciais inválidas' });
+}
+
+// Gerar token
+const token = jwt.sign(
+  { id: usuario.usuario_id, empresa_id: usuario.empresa_id },
+  process.env.JWT_SECRET,
+  { expiresIn: '8h' }
+);
+
+// Retornar dados + token
+return res.json({
+  usuario: {
+    id: usuario.usuario_id,
+    nome: usuario.nome,
+    perfil: usuario.perfil
+  },
+  token
+});
+
+
 
 // ===========================
 // Rota de login
