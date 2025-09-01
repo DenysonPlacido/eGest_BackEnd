@@ -1,4 +1,5 @@
-import express from 'express';
+///workspaces/eGest_BackEnd/routes/menus.js
+ import express from 'express';
 import jwt from 'jsonwebtoken';
 import { pool } from '../db.js';
 
@@ -29,55 +30,69 @@ router.get('/menus', async (req, res) => {
     const result = await pool.query(query, [usuarioId]);
     const menus = result.rows;
 
-    // Organizar estrutura hierárquica
+    // Mapas auxiliares
     const estrutura = [];
-const submenuMap = {};
+    const menuMap = {};
+    const submenuMap = {};
 
-// Montar menus
-menus.forEach(menu => {
-  if (menu.tipo === 'menu') {
-    estrutura.push({
-      id: menu.id,
-      nome: menu.nome,
-      icone: menu.icone,
-      caminho: menu.caminho,
-      tipo: menu.tipo,
-      submenus: []
+    // Consolidar menus base por nome + caminho
+    menus.forEach(item => {
+      if (item.tipo === 'menu') {
+        const key = `${item.nome}|${item.caminho}`;
+        if (!menuMap[key]) {
+          const menu = {
+            nome: item.nome,
+            icone: item.icone,
+            caminho: item.caminho,
+            tipo: item.tipo,
+            submenus: []
+          };
+          estrutura.push(menu);
+          menuMap[key] = menu;
+        }
+      }
     });
-  }
-});
 
-// Montar submenus e indexar
-menus.forEach(submenu => {
-  if (submenu.tipo === 'submenu') {
-    const menuPai = estrutura.find(m => m.id === submenu.hierarquia_pai);
-    if (menuPai) {
-      const sub = {
-        id: submenu.id,
-        nome: submenu.nome,
-        icone: submenu.icone,
-        caminho: submenu.caminho,
-        tipo: submenu.tipo,
-        acoes: []
-      };
-      menuPai.submenus.push(sub);
-      submenuMap[submenu.id] = sub;
-    }
-  }
-});
+    // Mapear menu_id → menu consolidado
+    const menuIdMap = {};
+    menus.forEach(item => {
+      if (item.tipo === 'menu') {
+        const key = `${item.nome}|${item.caminho}`;
+        menuIdMap[item.id] = menuMap[key];
+      }
+    });
 
-// Montar ações com nome correto
-menus.forEach(acao => {
-  if (acao.tipo === 'acao') {
-    const submenu = submenuMap[acao.hierarquia_pai];
-    if (submenu) {
-      submenu.acoes.push({
-        nome: acao.nome,
-        caminho: acao.caminho
-      });
-    }
-  }
-});
+    // Montar submenus
+    menus.forEach(item => {
+      if (item.tipo === 'submenu') {
+        const menuPai = menuIdMap[item.hierarquia_pai];
+        if (menuPai) {
+          const sub = {
+            id: item.id,
+            nome: item.nome,
+            icone: item.icone,
+            caminho: item.caminho,
+            tipo: item.tipo,
+            acoes: []
+          };
+          menuPai.submenus.push(sub);
+          submenuMap[item.id] = sub;
+        }
+      }
+    });
+
+    // Montar ações
+    menus.forEach(item => {
+      if (item.tipo === 'acao') {
+        const submenu = submenuMap[item.hierarquia_pai];
+        if (submenu) {
+          submenu.acoes.push({
+            nome: item.nome,
+            caminho: item.caminho
+          });
+        }
+      }
+    });
 
     res.json(estrutura);
   } catch (err) {
