@@ -1,5 +1,5 @@
 ///workspaces/eGest_BackEnd/routes/menus.js
- import express from 'express';
+import express from 'express';
 import jwt from 'jsonwebtoken';
 import { pool } from '../db.js';
 
@@ -34,8 +34,9 @@ router.get('/menus', async (req, res) => {
     const estrutura = [];
     const menuMap = {};
     const submenuMap = {};
+    const submenuKeyMap = {}; // novo: agrupa submenus por nome|caminho
 
-    // Consolidar menus base por nome + caminho
+    // Consolidar menus base
     menus.forEach(item => {
       if (item.tipo === 'menu') {
         const key = `${item.nome}|${item.caminho}`;
@@ -52,7 +53,6 @@ router.get('/menus', async (req, res) => {
         }
       }
     });
-
     // Mapear menu_id → menu consolidado
     const menuIdMap = {};
     menus.forEach(item => {
@@ -61,27 +61,28 @@ router.get('/menus', async (req, res) => {
         menuIdMap[item.id] = menuMap[key];
       }
     });
-
-    // Montar submenus
+    // Consolidar submenus por nome|caminho
     menus.forEach(item => {
       if (item.tipo === 'submenu') {
+        const key = `${item.nome}|${item.caminho}`;
         const menuPai = menuIdMap[item.hierarquia_pai];
         if (menuPai) {
-          const sub = {
-            id: item.id,
-            nome: item.nome,
-            icone: item.icone,
-            caminho: item.caminho,
-            tipo: item.tipo,
-            acoes: []
-          };
-          menuPai.submenus.push(sub);
-          submenuMap[item.id] = sub;
+          if (!submenuKeyMap[key]) {
+            const sub = {
+              nome: item.nome,
+              icone: item.icone,
+              caminho: item.caminho,
+              tipo: item.tipo,
+              acoes: []
+            };
+            menuPai.submenus.push(sub);
+            submenuKeyMap[key] = sub;
+          }
+          submenuMap[item.id] = submenuKeyMap[key]; // vincula todos os IDs ao mesmo submenu consolidado
         }
       }
     });
-
-    // Montar ações
+    // Vincular ações aos submenus consolidados
     menus.forEach(item => {
       if (item.tipo === 'acao') {
         const submenu = submenuMap[item.hierarquia_pai];
@@ -93,6 +94,7 @@ router.get('/menus', async (req, res) => {
         }
       }
     });
+
 
     res.json(estrutura);
   } catch (err) {
