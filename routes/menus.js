@@ -90,6 +90,7 @@ menus.forEach(item => {
 // Consolidar ações
 menus.forEach(item => {
   if (item.tipo === 'acao') {
+    // Primeiro tenta vincular à submenu
     const submenu = submenuMap[item.hierarquia_pai];
     if (submenu) {
       submenu.acoes.push({
@@ -97,6 +98,17 @@ menus.forEach(item => {
         caminho: item.caminho,
         icone: item.icone
       });
+    } else {
+      // Se não houver submenu, tenta vincular direto ao menu
+      const menu = menuIdMap[item.hierarquia_pai];
+      if (menu) {
+        if (!menu.acoes) menu.acoes = [];
+        menu.acoes.push({
+          nome: item.nome,
+          caminho: item.caminho,
+          icone: item.icone
+        });
+      }
     }
   }
 });
