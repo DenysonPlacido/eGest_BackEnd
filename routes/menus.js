@@ -34,68 +34,72 @@ router.get('/menus', async (req, res) => {
 
     // Mapas auxiliares
     const estrutura = [];
-    const menuMap = {};
-    const submenuMap = {};
-    const submenuKeyMap = {}; // novo: agrupa submenus por nome|caminho
+const menuMap = {};
+const submenuMap = {};
+const submenuKeyMap = {};
 
-    // Consolidar menus base
-    menus.forEach(item => {
-      if (item.tipo === 'menu') {
-        const key = `${item.nome}|${item.caminho}`;
-        if (!menuMap[key]) {
-          const menu = {
-            nome: item.nome,
-            icone: item.icone,
-            caminho: item.caminho,
-            tipo: item.tipo,
-            submenus: []
-          };
-          estrutura.push(menu);
-          menuMap[key] = menu;
-        }
+// Consolidar menus base
+menus.forEach(item => {
+  if (item.tipo === 'menu') {
+    const key = `${item.nome}|${item.caminho}`;
+    if (!menuMap[key]) {
+      const menu = {
+        nome: item.nome,
+        icone: item.icone,
+        caminho: item.caminho,
+        tipo: item.tipo,
+        submenus: []
+      };
+      estrutura.push(menu);
+      menuMap[key] = menu;
+    }
+  }
+});
+
+// Mapear menu_id → menu consolidado
+const menuIdMap = {};
+menus.forEach(item => {
+  if (item.tipo === 'menu') {
+    const key = `${item.nome}|${item.caminho}`;
+    menuIdMap[item.id] = menuMap[key];
+  }
+});
+
+// Consolidar submenus
+menus.forEach(item => {
+  if (item.tipo === 'submenu') {
+    const key = `${item.nome}|${item.caminho}`;
+    const menuPai = menuIdMap[item.hierarquia_pai];
+    if (menuPai) {
+      if (!submenuKeyMap[key]) {
+        const sub = {
+          nome: item.nome,
+          icone: item.icone,
+          caminho: item.caminho,
+          tipo: item.tipo,
+          acoes: []
+        };
+        menuPai.submenus.push(sub);
+        submenuKeyMap[key] = sub;
       }
-    });
-    // Mapear menu_id → menu consolidado
-    const menuIdMap = {};
-    menus.forEach(item => {
-      if (item.tipo === 'menu') {
-        const key = `${item.nome}|${item.caminho}`;
-        menuIdMap[item.id] = menuMap[key];
-      }
-    });
-    // Consolidar submenus por nome|caminho
-    menus.forEach(item => {
-      if (item.tipo === 'submenu') {
-        const key = `${item.nome}|${item.caminho}`;
-        const menuPai = menuIdMap[item.hierarquia_pai];
-        if (menuPai) {
-          if (!submenuKeyMap[key]) {
-            const sub = {
-              nome: item.nome,
-              icone: item.icone,
-              caminho: item.caminho,
-              tipo: item.tipo,
-              acoes: []
-            };
-            menuPai.submenus.push(sub);
-            submenuKeyMap[key] = sub;
-          }
-          submenuMap[item.id] = submenuKeyMap[key]; // vincula todos os IDs ao mesmo submenu consolidado
-        }
-      }
-    });
-    // Vincular ações aos submenus consolidados
-    menus.forEach(item => {
-      if (item.tipo === 'acao') {
-        const submenu = submenuMap[item.hierarquia_pai];
-        if (submenu) {
-          submenu.acoes.push({
-            nome: item.nome,
-            caminho: item.caminho
-          });
-        }
-      }
-    });
+      submenuMap[item.id] = submenuKeyMap[key];
+    }
+  }
+});
+
+// Consolidar ações
+menus.forEach(item => {
+  if (item.tipo === 'acao') {
+    const submenu = submenuMap[item.hierarquia_pai];
+    if (submenu) {
+      submenu.acoes.push({
+        nome: item.nome,
+        caminho: item.caminho,
+        icone: item.icone
+      });
+    }
+  }
+});
 
 
     res.json(estrutura);
