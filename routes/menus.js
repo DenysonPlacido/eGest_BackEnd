@@ -31,8 +31,9 @@ router.get('/menus', async (req, res) => {
 
     // Organizar estrutura hierárquica
     const estrutura = [];
+const submenuMap = {};
 
-// Primeiro, montar os menus principais
+// Montar menus
 menus.forEach(menu => {
   if (menu.tipo === 'menu') {
     estrutura.push({
@@ -46,35 +47,35 @@ menus.forEach(menu => {
   }
 });
 
-// Depois, montar os submenus dentro dos menus
+// Montar submenus e indexar
 menus.forEach(submenu => {
   if (submenu.tipo === 'submenu') {
     const menuPai = estrutura.find(m => m.id === submenu.hierarquia_pai);
     if (menuPai) {
-      menuPai.submenus.push({
+      const sub = {
         id: submenu.id,
         nome: submenu.nome,
         icone: submenu.icone,
         caminho: submenu.caminho,
         tipo: submenu.tipo,
         acoes: []
-      });
+      };
+      menuPai.submenus.push(sub);
+      submenuMap[submenu.id] = sub;
     }
   }
 });
 
-// Por fim, montar as ações dentro dos submenus
+// Montar ações com nome correto
 menus.forEach(acao => {
   if (acao.tipo === 'acao') {
-    estrutura.forEach(menu => {
-      const submenu = menu.submenus.find(s => s.id === acao.hierarquia_pai);
-      if (submenu) {
-        submenu.acoes.push({
-          nome: acao.nome,
-          caminho: acao.caminho
-        });
-      }
-    });
+    const submenu = submenuMap[acao.hierarquia_pai];
+    if (submenu) {
+      submenu.acoes.push({
+        nome: acao.nome,
+        caminho: acao.caminho
+      });
+    }
   }
 });
 
