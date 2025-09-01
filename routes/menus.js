@@ -16,16 +16,15 @@ router.get('/menus', async (req, res) => {
     const usuarioId = decoded.id;
 
     const query = `
-    SELECT 
-      m.id, m.nome, m.icone, m.caminho, m.tipo, m.hierarquia_pai
-    FROM usuarios u
-    JOIN usuario_perfil up ON up.usuario_id = u.id
-    JOIN perfis p ON p.id = up.perfil_id
-    JOIN perfil_menu_permissao pmp ON pmp.perfil_id = p.id AND pmp.ativo = TRUE
-    JOIN menus_sistema m ON m.id = pmp.menu_id
-    WHERE u.id = $1
-    GROUP BY m.id, m.nome, m.icone, m.caminho, m.tipo, m.hierarquia_pai
-    ORDER BY m.id;
+   SELECT DISTINCT ON (m.ordem) 
+  m.id, m.nome, m.icone, m.caminho, m.tipo, m.hierarquia_pai
+FROM usuarios u
+      JOIN usuario_perfil up ON up.usuario_id = u.id
+      JOIN perfis p ON p.id = up.perfil_id
+      JOIN perfil_menu_permissao pmp ON pmp.perfil_id = p.id AND pmp.ativo = TRUE
+      JOIN menus_sistema m ON m.id = pmp.menu_id
+      WHERE u.id = 1
+ORDER BY  m.ordem ASC
 
     `;
 
