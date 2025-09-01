@@ -23,7 +23,7 @@ FROM usuarios u
       JOIN perfis p ON p.id = up.perfil_id
       JOIN perfil_menu_permissao pmp ON pmp.perfil_id = p.id AND pmp.ativo = TRUE
       JOIN menus_sistema m ON m.id = pmp.menu_id
-      WHERE u.id = 1
+      WHERE u.id = $1
 ORDER BY  m.ordem ASC
 
     `;
