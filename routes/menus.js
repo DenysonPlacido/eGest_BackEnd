@@ -30,21 +30,53 @@ router.get('/menus', async (req, res) => {
     const menus = result.rows;
 
     // Organizar estrutura hierárquica
-    const estrutura = menus
-      .filter(m => m.tipo === 'menu' || m.tipo === 'submenu')
-      .map(menu => ({
-        id: menu.id,
-        nome: menu.nome,
-        icone: menu.icone,
-        caminho: menu.caminho,
-        tipo: menu.tipo,
-        submenus: menus
-          .filter(sub => sub.hierarquia_pai === menu.id && sub.tipo === 'acao')
-          .map(sub => ({
-            nome: sub.nome,
-            caminho: sub.caminho
-          }))
-      }));
+    const estrutura = [];
+
+// Primeiro, montar os menus principais
+menus.forEach(menu => {
+  if (menu.tipo === 'menu') {
+    estrutura.push({
+      id: menu.id,
+      nome: menu.nome,
+      icone: menu.icone,
+      caminho: menu.caminho,
+      tipo: menu.tipo,
+      submenus: []
+    });
+  }
+});
+
+// Depois, montar os submenus dentro dos menus
+menus.forEach(submenu => {
+  if (submenu.tipo === 'submenu') {
+    const menuPai = estrutura.find(m => m.id === submenu.hierarquia_pai);
+    if (menuPai) {
+      menuPai.submenus.push({
+        id: submenu.id,
+        nome: submenu.nome,
+        icone: submenu.icone,
+        caminho: submenu.caminho,
+        tipo: submenu.tipo,
+        acoes: []
+      });
+    }
+  }
+});
+
+// Por fim, montar as ações dentro dos submenus
+menus.forEach(acao => {
+  if (acao.tipo === 'acao') {
+    estrutura.forEach(menu => {
+      const submenu = menu.submenus.find(s => s.id === acao.hierarquia_pai);
+      if (submenu) {
+        submenu.acoes.push({
+          nome: acao.nome,
+          caminho: acao.caminho
+        });
+      }
+    });
+  }
+});
 
     res.json(estrutura);
   } catch (err) {
