@@ -33,7 +33,7 @@ router.post('/login', async (req, res) => {
         perfil: usuario.perfil
       },
       process.env.JWT_SECRET,
-      { expiresIn: '1m' }
+      { expiresIn: '5m' }
     );
 
     // Retornar dados do usuário + token
