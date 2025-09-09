@@ -1,0 +1,20 @@
+/eGest_BackEnd/
+│
+├── controllers/
+│   ├── authController.js
+│   ├── menuController.js
+│
+├── services/
+│   ├── authService.js
+│   ├── menuService.js
+│
+├── middlewares/
+│   ├── authMiddleware.js
+│
+├── routes/
+│   ├── authRoutes.js
+│   ├── menuRoutes.js
+│
+├── db.js
+├── app.js
+├── .env
