@@ -1,10 +1,12 @@
-// /workspaces/eGest_BackEnd/index.js
 import express from 'express';
 import cors from 'cors';
-import authRoutes from './routes/auth.js';
-import menusRoutes from './routes/menus.js';
 
-const app = express();
+import authRoutes from './routes/auth.js';         // login e empresas
+import menusRoutes from './routes/menus.js';       // menus
+import pessoasRoutes from './routes/pessoas.js';   // pessoas
+import usuariosRoutes from './routes/usuarios.js'; // usuários
+
+const app = express(); // 🔄 mover para cima antes de usar
 const PORT = process.env.PORT || 3000;
 
 // Middleware
@@ -16,8 +18,10 @@ app.get('/', (req, res) => {
   res.send('✅ Back-end funcionando!');
 });
 
-app.use('/api', authRoutes);     // login e empresas
-app.use('/api', menusRoutes);    // menus
+app.use('/api', authRoutes);
+app.use('/api', menusRoutes);
+app.use('/api', pessoasRoutes);
+app.use('/api', usuariosRoutes);
 
 // Inicia servidor
 app.listen(PORT, () => {

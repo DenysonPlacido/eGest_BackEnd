@@ -1,12 +1,10 @@
+// routes/auth.js
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { pool } from '../db.js';
 
 const router = express.Router();
 
-// ===========================
-// Rota de login
-// ===========================
 router.post('/login', async (req, res) => {
   const { empresa_id, username, senha } = req.body;
 
@@ -17,14 +15,12 @@ router.post('/login', async (req, res) => {
   try {
     const query = `SELECT * FROM lg_in($1, $2, $3);`;
     const result = await pool.query(query, [empresa_id.toString(), username, senha]);
-
     const usuario = result.rows[0];
 
     if (!usuario || !usuario.usuario_id) {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
 
-    // Gerar token JWT
     const token = jwt.sign(
       {
         id: usuario.usuario_id,
@@ -36,8 +32,7 @@ router.post('/login', async (req, res) => {
       { expiresIn: '5m' }
     );
 
-    // Retornar dados do usuário + token
-    return res.json({
+    res.status(200).json({
       usuario: {
         id: usuario.usuario_id,
         nome: usuario.nome,
@@ -48,21 +43,7 @@ router.post('/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Erro no login:', err);
-    return res.status(500).json({ message: 'Erro interno no servidor' });
-  }
-});
-
-// ===========================
-// Rota para listar empresas ativas
-// ===========================
-router.get('/empresas', async (req, res) => {
-  try {
-    const query = 'SELECT empresa_id, nome FROM empresas WHERE situacao = 1 ORDER BY nome';
-    const result = await pool.query(query);
-    res.json(result.rows);
-  } catch (err) {
-    console.error('Erro ao buscar empresas:', err);
-    res.status(500).json({ message: 'Erro ao buscar empresas' });
+    res.status(500).json({ message: 'Erro interno no servidor' });
   }
 });
 
