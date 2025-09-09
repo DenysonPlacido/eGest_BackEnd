@@ -1,3 +1,4 @@
+// /workspaces/eGest_BackEnd/index.js
 import express from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth.js';

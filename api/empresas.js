@@ -1,6 +1,19 @@
+// /workspaces/eGest_BackEnd/api/empresas.js
+
 import { pool } from '../db.js';
 
 export default async function handler(req, res) {
+  // Configura CORS manualmente
+  res.setHeader('Access-Control-Allow-Origin', 'https://e-gest.vercel.app');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Trata requisição preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // Valida método
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Método não permitido' });
   }
