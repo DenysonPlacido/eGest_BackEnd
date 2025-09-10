@@ -5,6 +5,8 @@ import authRoutes from './routes/auth.js';         // login e empresas
 import menusRoutes from './routes/menus.js';       // menus
 import pessoasRoutes from './routes/pessoas.js';   // pessoas
 import usuariosRoutes from './routes/usuarios.js'; // usuários
+import empresasRoutes from './routes/empresas.js';
+
 
 const app = express(); // 🔄 mover para cima antes de usar
 const PORT = process.env.PORT || 3000;
@@ -18,10 +20,13 @@ app.get('/', (req, res) => {
   res.send('✅ Back-end funcionando!');
 });
 
+
+app.use('/api', empresasRoutes);
 app.use('/api', authRoutes);
 app.use('/api', menusRoutes);
 app.use('/api', pessoasRoutes);
 app.use('/api', usuariosRoutes);
+
 
 // Inicia servidor
 app.listen(PORT, () => {
