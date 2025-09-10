@@ -25,8 +25,8 @@ router.post('/login', async (req, res) => {
       {
         id: usuario.usuario_id,
         empresa_id: usuario.empresa_id,
-        nome: usuario.nome,
-        perfil: usuario.perfil
+        nome: usuario.nome_completo, // atualizado
+        tipo_usuario: usuario.tipo_usuario // se quiser incluir no token
       },
       process.env.JWT_SECRET,
       { expiresIn: '5m' }
@@ -35,8 +35,8 @@ router.post('/login', async (req, res) => {
     res.status(200).json({
       usuario: {
         id: usuario.usuario_id,
-        nome: usuario.nome,
-        perfil: usuario.perfil,
+        nome: usuario.nome_completo, // atualizado
+        tipo_usuario: usuario.tipo_usuario,
         empresa_id: usuario.empresa_id
       },
       token
