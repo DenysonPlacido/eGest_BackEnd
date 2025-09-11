@@ -37,7 +37,8 @@ router.post('/login', async (req, res) => {
         id: usuario.usuario_id,
         nome: usuario.nome_completo, // atualizado
         tipo_usuario: usuario.tipo_usuario,
-        empresa_id: usuario.empresa_id
+        empresa_id: usuario.empresa_id,
+        empresa_nome: usuario.empresa_nome
       },
       token
     });
