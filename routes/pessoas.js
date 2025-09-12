@@ -56,4 +56,21 @@ router.post('/pessoas/gerenciar', async (req, res) => {
   }
 });
 
+
+
+router.get('/enderecos/buscar', async (req, res) => {
+  const { cep } = req.query;
+  const result = await pool.query(`
+    SELECT cod_logradouro, cod_bairro, nome_logradouro AS logradouro, nome_bairro AS bairro
+    FROM logradouros
+    WHERE cep = $1
+  `, [cep]);
+
+  if (result.rows.length === 0) {
+    return res.status(404).json({ erro: 'Endereço não encontrado' });
+  }
+
+  res.json(result.rows[0]);
+});
+
 export default router;
