@@ -3,13 +3,14 @@ import { pool } from '../db.js';
 
 const router = express.Router();
 
-const { limit, offset } = req.body;
 
 router.post('/pessoas/gerenciar', async (req, res) => {
   const {
     acao, pessoa_id, tipo_pessoa, cpf_cnpj, nome, data_nascimento,
-    ddd, fone, email, cep, cod_logradouro, numero, cod_bairro, complemento
+    ddd, fone, email, cep, cod_logradouro, numero, cod_bairro, complemento,
+    limit, offset
   } = req.body;
+
 
   const client = await pool.connect();
   try {
