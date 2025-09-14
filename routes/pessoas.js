@@ -3,6 +3,8 @@ import { pool } from '../db.js';
 
 const router = express.Router();
 
+const { limit, offset } = req.body;
+
 router.post('/pessoas/gerenciar', async (req, res) => {
   const {
     acao, pessoa_id, tipo_pessoa, cpf_cnpj, nome, data_nascimento,
@@ -30,12 +32,19 @@ router.post('/pessoas/gerenciar', async (req, res) => {
       await client.query(`
         CALL gerenciar_pessoa(
           $1, $2, $3, $4, $5, $6, $7, $8, $9,
-          $10, $11, $12, $13, $14, $15
+          $10, $11, $12, $13, $14, $15,
+          $16, $17
         )
       `, [
         acao, pessoa_id, tipo_pessoa, cpf_cnpj, nome, data_nascimento,
-        ddd, fone, email, cep, cod_logradouro, numero, cod_bairro, complemento, null
+        ddd, fone, email, cep, cod_logradouro, numero, cod_bairro, complemento,
+        'resultado_cursor', limit, offset
       ]);
+
+
+
+
+
 
       // Captura de mensagens via SELECT opcional
       const feedback = await client.query(`SELECT 'Ação realizada com sucesso' AS mensagem`);
