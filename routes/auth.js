@@ -29,7 +29,7 @@ router.post('/login', async (req, res) => {
         tipo_usuario: usuario.tipo_usuario // se quiser incluir no token
       },
       process.env.JWT_SECRET,
-      { expiresIn: '5m' }
+      { expiresIn: '3m' }
     );
 
     res.status(200).json({
