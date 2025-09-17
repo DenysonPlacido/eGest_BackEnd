@@ -1,37 +1,43 @@
 // /workspaces/eGest_BackEnd/index.js
 
-
 import express from 'express';
 import cors from 'cors';
 
-import authRoutes from './routes/auth.js';         // login e empresas
+import authRoutes from './routes/auth.js';         // login e autenticação
 import menusRoutes from './routes/menus.js';       // menus
-import pessoasRoutes from './routes/pessoas.js';   // pessoas
-import usuariosRoutes from './routes/usuarios.js'; // usuários
-import empresasRoutes from './routes/empresas.js';
+import pessoasRoutes from './routes/pessoas.js';   // CRUD de pessoas
+import usuariosRoutes from './routes/usuarios.js'; // CRUD de usuários
+import empresasRoutes from './routes/empresas.js'; // CRUD de empresas
 
-
-const app = express(); // 🔄 mover para cima antes de usar
+const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// =======================
+// Middlewares globais
+// =======================
 app.use(cors());
 app.use(express.json());
 
-// Rotas
+// =======================
+// Health-check
+// =======================
 app.get('/', (req, res) => {
   res.send('✅ Back-end funcionando!');
 });
 
+// =======================
+// Rotas principais (RESTful)
+// =======================
+// Cada grupo de rotas em seu endpoint
+app.use('/api/auth', authRoutes);         // autenticação (login, logout)
+app.use('/api/menus', menusRoutes);       // menus
+app.use('/api/pessoas', pessoasRoutes);   // CRUD de pessoas
+app.use('/api/usuarios', usuariosRoutes); // CRUD de usuários
+app.use('/api/empresas', empresasRoutes); // CRUD de empresas
 
-app.use('/api', empresasRoutes);
-app.use('/api', authRoutes);
-app.use('/api', menusRoutes);
-app.use('/api', pessoasRoutes);
-app.use('/api', usuariosRoutes);
-
-
-// Inicia servidor
+// =======================
+// Inicialização do servidor
+// =======================
 app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando na porta ${PORT}`);
 });
