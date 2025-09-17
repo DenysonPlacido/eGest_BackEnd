@@ -10,7 +10,7 @@ const router = express.Router();
 // ===================================
 // 🔎 GET /pessoas  (listar pessoas)
 // ===================================
-router.get('/pessoas', async (req, res) => {
+router.get('/', async (req, res) => {
   const { pessoa_id, nome, cpf_cnpj, limit = 10, offset = 0 } = req.query;
 
   const client = await pool.connect();
@@ -44,7 +44,7 @@ router.get('/pessoas', async (req, res) => {
 // ===================================
 // ➕ POST /pessoas  (inserir pessoa)
 // ===================================
-router.post('/pessoas', async (req, res) => {
+router.post('/', async (req, res) => {
   const {
     tipo_pessoa, cpf_cnpj, nome, data_nascimento,
     ddd, fone, email, cep, cod_logradouro,
@@ -76,7 +76,7 @@ router.post('/pessoas', async (req, res) => {
 // ===================================
 // ✏️ PUT /pessoas/:id  (atualizar pessoa)
 // ===================================
-router.put('/pessoas/:id', async (req, res) => {
+router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const {
     tipo_pessoa, cpf_cnpj, nome, data_nascimento,
@@ -109,7 +109,7 @@ router.put('/pessoas/:id', async (req, res) => {
 // ===================================
 // 🗑️ DELETE /pessoas/:id  (deletar pessoa)
 // ===================================
-router.delete('/pessoas/:id', async (req, res) => {
+router.delete('/:id', async (req, res) => {
   const { id } = req.params;
 
   const client = await pool.connect();

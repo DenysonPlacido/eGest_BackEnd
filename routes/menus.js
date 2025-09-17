@@ -5,7 +5,7 @@ import { pool } from '../db.js';
 
 const router = express.Router();
 
-router.get('/menus', async (req, res) => {
+router.get('/', async (req, res) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(' ')[1];
 
