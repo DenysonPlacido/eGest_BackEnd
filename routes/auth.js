@@ -7,16 +7,16 @@ const router = express.Router();
 
 router.post('/login', async (req, res) => {
   const { username, senha } = req.body;
-  const empresa_id = parseInt(req.headers['x-empresa-id'], 10); // ainda necessário pra escolher o pool
+  const empresa_id = parseInt(req.headers['x-empresa-id'], 10);
 
   if (!empresa_id || !username || !senha) {
     return res.status(400).json({ message: 'Campos obrigatórios' });
   }
 
-  const pool = getPool(empresa_id); // conecta ao banco da empresa
-
   try {
-    // ✅ Agora a função só recebe login e senha
+    const pool = getPool(empresa_id);
+
+    // 1️⃣ Verifica credenciais
     const loginQuery = `SELECT * FROM lg_in($1, $2);`;
     const loginResult = await pool.query(loginQuery, [username, senha]);
     const usuario = loginResult.rows[0];
@@ -25,6 +25,7 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
 
+    // 2️⃣ Busca tempo de sessão na tabela de configurações
     const configQuery = `
       SELECT valor 
       FROM public.configuracoes 
@@ -34,10 +35,12 @@ router.post('/login', async (req, res) => {
     let tempoSessao = configResult.rows[0]?.valor || 3;
     tempoSessao = parseInt(tempoSessao, 10);
 
+    // 3️⃣ Gera o token com tempo de expiração da configuração
     const token = jwt.sign(
       {
         id: usuario.usuario_id,
-        tipo_usuario: usuario.tipo_usuario
+        tipo_usuario: usuario.tipo_usuario,
+        empresa_id: usuario.empresa_id // ainda útil para rastrear
       },
       process.env.JWT_SECRET,
       { expiresIn: `${tempoSessao}m` }
@@ -48,7 +51,7 @@ router.post('/login', async (req, res) => {
         id: usuario.usuario_id,
         nome: usuario.nome_completo,
         tipo_usuario: usuario.tipo_usuario,
-        empresa_id: usuario.empresa_id // ainda vem do banco, útil pra rastrear
+        empresa_id: usuario.empresa_id
       },
       token,
       tempoSessao
@@ -59,7 +62,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-
+export default router;
 
 
 
