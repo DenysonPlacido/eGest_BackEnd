@@ -1,4 +1,10 @@
 // /workspaces/eGest_BackEnd/routes/auth.js
+import express from 'express';
+import jwt from 'jsonwebtoken';
+import { getPool } from '../db.js';
+
+const router = express.Router();
+
 router.post('/login', async (req, res) => {
   const { username, senha } = req.body;
   const empresa_id = parseInt(req.headers['x-empresa-id'], 10); // ainda necessário pra escolher o pool
@@ -52,6 +58,7 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Erro interno no servidor' });
   }
 });
+
 
 
 
