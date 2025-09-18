@@ -2,6 +2,9 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 
+console.log('Empresa ID:', empresa_id);
+console.log('Pool encontrado:', !!pool);
+
 const dbConfigs = {
   1: {
     connectionString: process.env.DB_URL_NEONDB,
