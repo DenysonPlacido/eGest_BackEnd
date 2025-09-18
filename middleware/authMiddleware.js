@@ -1,34 +1,29 @@
-// /db.js
-import pkg from 'pg';
-const { Pool } = pkg;
+// middleware/authMiddleware.js
+import jwt from 'jsonwebtoken';
+import { dbPools } from '../db.js';
 
-console.log('Empresa ID:', empresa_id);
-console.log('Pool encontrado:', !!pool);
+export function autenticar(req, res, next) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.split(' ')[1];
 
-const dbConfigs = {
-  1: {
-    connectionString: process.env.DB_URL_NEONDB,
-    ssl: { rejectUnauthorized: false }
-  },
-  2: {
-    connectionString: process.env.DB_URL_EGEST,
-    ssl: { rejectUnauthorized: false }
+  if (!token) return res.status(401).json({ message: 'Token não fornecido' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const empresa_id = decoded.empresa_id;
+
+    const pool = dbPools[empresa_id];
+    if (!pool) {
+      return res.status(400).json({ message: 'Empresa inválida ou sem pool configurado' });
+    }
+
+    // 🔑 Injeta no request
+    req.user = decoded;   // dados do usuário
+    req.pool = pool;      // pool da empresa
+
+    next();
+  } catch (err) {
+    console.error('Erro na autenticação:', err);
+    res.status(401).json({ message: 'Token inválido ou expirado' });
   }
-};
-
-// 🔁 Cria pools para cada empresa
-const dbPools = {};
-for (const [empresaId, config] of Object.entries(dbConfigs)) {
-  dbPools[empresaId] = new Pool(config);
 }
-
-// 🔁 Exporta função e pools
-export function getPool(empresa_id) {
-  const pool = dbPools[empresa_id];
-  if (!pool) {
-    throw new Error(`Empresa ${empresa_id} não configurada no banco.`);
-  }
-  return pool;
-}
-
-export { dbPools };
