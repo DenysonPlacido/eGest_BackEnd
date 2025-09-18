@@ -1,22 +1,16 @@
 // /workspaces/eGest_BackEnd/routes/auth.js
-import express from 'express';
-import jwt from 'jsonwebtoken';
-import { getPool } from '../db.js';
-
-const router = express.Router();
-
 router.post('/login', async (req, res) => {
-  const empresa_id = parseInt(req.headers['x-empresa-id'], 10);
   const { username, senha } = req.body;
+  const empresa_id = parseInt(req.headers['x-empresa-id'], 10); // ainda necessário pra escolher o pool
 
   if (!empresa_id || !username || !senha) {
     return res.status(400).json({ message: 'Campos obrigatórios' });
   }
 
-  try {
-    const pool = getPool(empresa_id);
+  const pool = getPool(empresa_id); // conecta ao banco da empresa
 
-    // 1️⃣ Verifica credenciais
+  try {
+    // ✅ Agora a função só recebe login e senha
     const loginQuery = `SELECT * FROM lg_in($1, $2);`;
     const loginResult = await pool.query(loginQuery, [username, senha]);
     const usuario = loginResult.rows[0];
@@ -25,26 +19,22 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Credenciais inválidas' });
     }
 
-    // 2️⃣ Busca tempo de sessão na tabela de configurações
     const configQuery = `
       SELECT valor 
       FROM public.configuracoes 
       WHERE nome = 'TEMPO_SESSAO'
     `;
     const configResult = await pool.query(configQuery);
-    let tempoSessao = configResult.rows[0]?.valor || 3; // padrão 3 minutos se não existir
-    tempoSessao = parseInt(tempoSessao, 10); // garante número
+    let tempoSessao = configResult.rows[0]?.valor || 3;
+    tempoSessao = parseInt(tempoSessao, 10);
 
-    // 3️⃣ Gera o token com tempo de expiração da configuração
     const token = jwt.sign(
       {
         id: usuario.usuario_id,
-        empresa_id: usuario.empresa_id,
-        nome: usuario.nome_completo,
         tipo_usuario: usuario.tipo_usuario
       },
       process.env.JWT_SECRET,
-      { expiresIn: `${tempoSessao}m` } // usa valor da tabela
+      { expiresIn: `${tempoSessao}m` }
     );
 
     res.status(200).json({
@@ -52,20 +42,16 @@ router.post('/login', async (req, res) => {
         id: usuario.usuario_id,
         nome: usuario.nome_completo,
         tipo_usuario: usuario.tipo_usuario,
-        empresa_id: usuario.empresa_id,
-        empresa_nome: usuario.empresa_nome
+        empresa_id: usuario.empresa_id // ainda vem do banco, útil pra rastrear
       },
       token,
       tempoSessao
     });
   } catch (err) {
-    console.error('Erro no login:', err);
+    console.error('Erro no login:', err.stack || err.message || err);
     res.status(500).json({ message: 'Erro interno no servidor' });
   }
 });
-
-export default router;
-
 
 
 
