@@ -1,7 +1,5 @@
 // /workspaces/eGest_BackEnd/routes/usuarios.js
-
 import express from 'express';
-import { pool } from '../db.js';
 
 const router = express.Router();
 
@@ -12,7 +10,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   const { id, login, limit = 10, offset = 0 } = req.query;
 
-  const client = await pool.connect();
+  const client = await req.pool.connect();
   try {
     await client.query('BEGIN');
     await client.query(
@@ -40,7 +38,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
 
-  const client = await pool.connect();
+  const client = await req.pool.connect();
   try {
     await client.query('BEGIN');
     await client.query(
@@ -72,7 +70,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   const { pessoa_id, status_usuario, tipo_usuario, senha, empresa_id, login } = req.body;
 
-  const client = await pool.connect();
+  const client = await req.pool.connect();
   try {
     await client.query('BEGIN');
     await client.query(
@@ -99,7 +97,7 @@ router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { pessoa_id, status_usuario, tipo_usuario, senha, empresa_id, login } = req.body;
 
-  const client = await pool.connect();
+  const client = await req.pool.connect();
   try {
     await client.query('BEGIN');
     await client.query(
@@ -125,13 +123,10 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
 
-  const client = await pool.connect();
+  const client = await req.pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query(
-      `CALL deletar_usuario($1)`,
-      [id]
-    );
+    await client.query(`CALL deletar_usuario($1)`, [id]);
     await client.query('COMMIT');
 
     res.json({ mensagem: `Usuário ${id} deletado com sucesso` });
@@ -145,3 +140,178 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
+
+
+
+/**
+ * @swagger
+ * /api/usuarios:
+ *   get:
+ *     summary: Lista usuários com filtros e paginação
+ *     tags: [Usuários]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: id
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: login
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *     responses:
+ *       200:
+ *         description: Lista de usuários
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *       500:
+ *         description: Erro interno ao listar usuários
+ */
+
+
+
+/**
+ * @swagger
+ * /api/usuarios/{id}:
+ *   get:
+ *     summary: Busca um usuário pelo ID
+ *     tags: [Usuários]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Dados do usuário
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       404:
+ *         description: Usuário não encontrado
+ *       500:
+ *         description: Erro interno ao buscar usuário
+ */
+
+
+
+/**
+ * @swagger
+ * /api/usuarios:
+ *   post:
+ *     summary: Cria um novo usuário
+ *     tags: [Usuários]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - pessoa_id
+ *               - status_usuario
+ *               - tipo_usuario
+ *               - senha
+ *             properties:
+ *               pessoa_id:
+ *                 type: integer
+ *               status_usuario:
+ *                 type: string
+ *               tipo_usuario:
+ *                 type: string
+ *               senha:
+ *                 type: string
+ *               empresa_id:
+ *                 type: integer
+ *               login:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Usuário criado com sucesso
+ *       500:
+ *         description: Erro interno ao criar usuário
+ */
+
+
+/**
+ * @swagger
+ * /api/usuarios/{id}:
+ *   put:
+ *     summary: Atualiza os dados de um usuário
+ *     tags: [Usuários]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pessoa_id:
+ *                 type: integer
+ *               status_usuario:
+ *                 type: string
+ *               tipo_usuario:
+ *                 type: string
+ *               senha:
+ *                 type: string
+ *               empresa_id:
+ *                 type: integer
+ *               login:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Usuário atualizado com sucesso
+ *       500:
+ *         description: Erro interno ao atualizar usuário
+ */
+
+
+/**
+ * @swagger
+ * /api/usuarios/{id}:
+ *   delete:
+ *     summary: Remove um usuário pelo ID
+ *     tags: [Usuários]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Usuário deletado com sucesso
+ *       500:
+ *         description: Erro interno ao deletar usuário
+ */

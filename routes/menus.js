@@ -1,20 +1,25 @@
 // /workspaces/eGest_BackEnd/routes/menus.js
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { pool } from '../db.js';
 
 const router = express.Router();
 
+/**
+ * GET /api/menus
+ * Retorna os menus do usuário autenticado (estrutura hierárquica)
+ */
 router.get('/', async (req, res) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(' ')[1];
 
   if (!token) return res.status(401).json({ message: 'Token não fornecido' });
 
+  const client = await req.pool.connect(); // usa o pool da empresa injetado pelo middleware
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const usuarioId = decoded.id;
 
+    await client.query('BEGIN');
     const query = `
       SELECT DISTINCT ON (m.ordem)
         m.id, m.nome, m.icone, m.caminho, m.tipo, m.hierarquia_pai
@@ -26,11 +31,12 @@ router.get('/', async (req, res) => {
       WHERE u.id = $1
       ORDER BY m.ordem ASC
     `;
+    const result = await client.query(query, [usuarioId]);
+    await client.query('COMMIT');
 
-    const result = await pool.query(query, [usuarioId]);
     const menus = result.rows;
 
-    // Montagem da estrutura hierárquica
+    // Construção da hierarquia
     const estrutura = [];
     const menuMap = {};
     const submenuMap = {};
@@ -99,9 +105,84 @@ router.get('/', async (req, res) => {
 
     res.status(200).json(estrutura);
   } catch (err) {
-    console.error('Erro ao buscar menus:', err);
+    await client.query('ROLLBACK');
+    console.error('❌ Erro ao buscar menus:', err);
     res.status(500).json({ message: 'Erro interno ao buscar menus' });
+  } finally {
+    client.release();
   }
 });
 
 export default router;
+
+
+/**
+ * @swagger
+ * tags:
+ *   name: Menus
+ *   description: Endpoints relacionados aos menus do sistema
+
+ * /api/menus:
+ *   get:
+ *     summary: Retorna os menus do usuário autenticado
+ *     tags: [Menus]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de menus hierárquicos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   nome:
+ *                     type: string
+ *                   icone:
+ *                     type: string
+ *                   caminho:
+ *                     type: string
+ *                   tipo:
+ *                     type: string
+ *                   submenus:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         nome:
+ *                           type: string
+ *                         icone:
+ *                           type: string
+ *                         caminho:
+ *                           type: string
+ *                         tipo:
+ *                           type: string
+ *                         acoes:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               nome:
+ *                                 type: string
+ *                               caminho:
+ *                                 type: string
+ *                               icone:
+ *                                 type: string
+ *                   acoes:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         nome:
+ *                           type: string
+ *                         caminho:
+ *                           type: string
+ *                         icone:
+ *                           type: string
+ *       401:
+ *         description: Token não fornecido ou inválido
+ *       500:
+ *         description: Erro interno ao buscar menus
+ */
