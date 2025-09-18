@@ -6,7 +6,7 @@ import { getPool } from '../db.js';
 const router = express.Router();
 
 router.post('/login', async (req, res) => {
-  const empresa_id = req.query.empresa_id;
+  const empresa_id = parseInt(req.headers['x-empresa-id'], 10);
   const { username, senha } = req.body;
 
   if (!empresa_id || !username || !senha) {
