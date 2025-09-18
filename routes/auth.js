@@ -6,7 +6,8 @@ import { getPool } from '../db.js';
 const router = express.Router();
 
 router.post('/login', async (req, res) => {
-  const { empresa_id, username, senha } = req.body;
+  const empresa_id = req.query.empresa_id;
+  const { username, senha } = req.body;
 
   if (!empresa_id || !username || !senha) {
     return res.status(400).json({ message: 'Campos obrigatórios' });
