@@ -25,6 +25,8 @@ export function getPool(empresa_id) {
   if (!pool) {
     throw new Error(`Empresa ${empresa_id} não configurada no banco.`);
   }
+
+  console.log(`🔌 Conectando ao banco da empresa ${empresa_id}:`, dbConfigs[empresa_id]?.connectionString);
   return pool;
 }
 
