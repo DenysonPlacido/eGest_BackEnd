@@ -2,6 +2,12 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 
+// ✅ Validação das variáveis de ambiente
+if (!process.env.DB_URL_NEONDB || !process.env.DB_URL_EGEST) {
+  throw new Error('❌ Variáveis de banco não definidas no ambiente!');
+}
+
+// 🔧 Configurações por empresa
 const dbConfigs = {
   1: {
     connectionString: process.env.DB_URL_NEONDB,
@@ -17,16 +23,17 @@ const dbConfigs = {
 const dbPools = {};
 for (const [empresaId, config] of Object.entries(dbConfigs)) {
   dbPools[empresaId] = new Pool(config);
+  console.log(`✅ Pool criado para empresa ${empresaId}:`, config.connectionString);
 }
 
-// 🔁 Exporta função e pools
+// 🔁 Exporta função para obter pool
 export function getPool(empresa_id) {
   const pool = dbPools[empresa_id];
   if (!pool) {
+    console.error(`❌ Empresa ${empresa_id} não configurada.`);
     throw new Error(`Empresa ${empresa_id} não configurada no banco.`);
   }
 
-  console.log(`🔌 Conectando ao banco da empresa ${empresa_id}:`, dbConfigs[empresa_id]?.connectionString);
   return pool;
 }
 
