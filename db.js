@@ -1,8 +1,7 @@
-// /workspaces/eGest_BackEnd/db.js
+// /db.js
 import pkg from 'pg';
 const { Pool } = pkg;
 
-// Configurações de conexões para cada empresa
 const dbConfigs = {
   1: {
     connectionString: process.env.DB_URL_NEONDB,
@@ -14,11 +13,19 @@ const dbConfigs = {
   }
 };
 
-// Função que retorna o pool certo conforme empresa
+// 🔁 Cria pools para cada empresa
+const dbPools = {};
+for (const [empresaId, config] of Object.entries(dbConfigs)) {
+  dbPools[empresaId] = new Pool(config);
+}
+
+// 🔁 Exporta função e pools
 export function getPool(empresa_id) {
-  const config = dbConfigs[empresa_id];
-  if (!config) {
+  const pool = dbPools[empresa_id];
+  if (!pool) {
     throw new Error(`Empresa ${empresa_id} não configurada no banco.`);
   }
-  return new Pool(config);
+  return pool;
 }
+
+export { dbPools };
