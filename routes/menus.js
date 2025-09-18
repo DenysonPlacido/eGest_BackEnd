@@ -1,25 +1,23 @@
 // /workspaces/eGest_BackEnd/routes/menus.js
 import express from 'express';
-import jwt from 'jsonwebtoken';
+import autenticar from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+// Middleware de autenticação para todos os endpoints desse router
+router.use(autenticar);
 
 /**
  * GET /api/menus
  * Retorna os menus do usuário autenticado (estrutura hierárquica)
  */
 router.get('/', async (req, res) => {
-  const authHeader = req.headers.authorization;
-  const token = authHeader?.split(' ')[1];
-
-  if (!token) return res.status(401).json({ message: 'Token não fornecido' });
-
-  const client = await req.pool.connect(); // usa o pool da empresa injetado pelo middleware
+  const client = await req.pool.connect();
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const usuarioId = decoded.id;
-
+    const usuarioId = req.user.id; // obtido do token
     await client.query('BEGIN');
+
+    // Query para buscar menus
     const query = `
       SELECT DISTINCT ON (m.ordem)
         m.id, m.nome, m.icone, m.caminho, m.tipo, m.hierarquia_pai
@@ -31,28 +29,31 @@ router.get('/', async (req, res) => {
       WHERE u.id = $1
       ORDER BY m.ordem ASC
     `;
-    const result = await client.query(query, [usuarioId]);
-    await client.query('COMMIT');
 
+    const result = await client.query(query, [usuarioId]);
     const menus = result.rows;
+
+    await client.query('COMMIT');
 
     // Construção da hierarquia
     const estrutura = [];
-    const menuMap = {};
-    const submenuMap = {};
-    const submenuKeyMap = {};
-    const menuIdMap = {};
+    const menuMap = {};        // chave: nome|caminho
+    const submenuMap = {};     // chave: id do submenu
+    const menuIdMap = {};      // chave: id do menu
 
+    // Primeiro: menus
     menus.forEach(item => {
       if (item.tipo === 'menu') {
         const key = `${item.nome}|${item.caminho}`;
         if (!menuMap[key]) {
           const menu = {
+            id: item.id,
             nome: item.nome,
             icone: item.icone,
             caminho: item.caminho,
             tipo: item.tipo,
-            submenus: []
+            submenus: [],
+            acoes: []
           };
           estrutura.push(menu);
           menuMap[key] = menu;
@@ -61,42 +62,48 @@ router.get('/', async (req, res) => {
       }
     });
 
+    // Segundo: submenus
     menus.forEach(item => {
       if (item.tipo === 'submenu') {
-        const key = `${item.nome}|${item.caminho}`;
         const menuPai = menuIdMap[item.hierarquia_pai];
-        if (menuPai && !submenuKeyMap[key]) {
-          const sub = {
-            nome: item.nome,
-            icone: item.icone,
-            caminho: item.caminho,
-            tipo: item.tipo,
-            acoes: []
-          };
-          menuPai.submenus.push(sub);
-          submenuKeyMap[key] = sub;
-          submenuMap[item.id] = sub;
+        if (!menuPai) {
+          console.warn('Submenu sem menu pai:', item.nome, item.hierarquia_pai);
+          return;
         }
+        const sub = {
+          id: item.id,
+          nome: item.nome,
+          icone: item.icone,
+          caminho: item.caminho,
+          tipo: item.tipo,
+          submenus: [],
+          acoes: []
+        };
+        menuPai.submenus.push(sub);
+        submenuMap[item.id] = sub;
       }
     });
 
+    // Terceiro: ações
     menus.forEach(item => {
       if (item.tipo === 'acao') {
-        const submenu = submenuMap[item.hierarquia_pai];
-        if (submenu) {
-          submenu.acoes.push({
+        const parentSub = submenuMap[item.hierarquia_pai];
+        if (parentSub) {
+          parentSub.acoes.push({
+            id: item.id,
             nome: item.nome,
-            caminho: item.caminho,
-            icone: item.icone
+            icone: item.icone,
+            caminho: item.caminho
           });
         } else {
-          const menu = menuIdMap[item.hierarquia_pai];
-          if (menu) {
-            if (!menu.acoes) menu.acoes = [];
-            menu.acoes.push({
+          // fallback: se ação está direto no menu
+          const parentMenu = menuIdMap[item.hierarquia_pai];
+          if (parentMenu) {
+            parentMenu.acoes.push({
+              id: item.id,
               nome: item.nome,
-              caminho: item.caminho,
-              icone: item.icone
+              icone: item.icone,
+              caminho: item.caminho
             });
           }
         }
@@ -104,6 +111,7 @@ router.get('/', async (req, res) => {
     });
 
     res.status(200).json(estrutura);
+
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('❌ Erro ao buscar menus:', err);
@@ -114,6 +122,7 @@ router.get('/', async (req, res) => {
 });
 
 export default router;
+
 
 
 /**
