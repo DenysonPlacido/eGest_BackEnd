@@ -10,11 +10,7 @@ const swaggerDefinition = {
     description: 'Documentação da API do eGest',
   },
   servers: [
-    {
-      url: 'http://localhost:3000',
-      description: 'Servidor local',
-    },
-    {
+     {
       url: 'https://e-gest-back-end.vercel.app',
       description: 'Servidor de produção',
     },
