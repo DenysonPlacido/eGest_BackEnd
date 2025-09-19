@@ -18,18 +18,30 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Swagger UI (sempre primeiro para evitar conflito com arquivos estáticos)
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// ----------------------------
+// Swagger UI oficial (funciona no Vercel)
+// ----------------------------
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, { explorer: true })
+);
 
+// ----------------------------
 // Arquivos estáticos da pasta public
+// ----------------------------
 app.use(express.static(path.join(process.cwd(), 'public')));
 
+// ----------------------------
 // Página inicial usando index.html
+// ----------------------------
 app.get('/', (req, res) => {
   res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
 });
 
-// Rotas da API
+// ----------------------------
+// Rotas da API protegidas
+// ----------------------------
 app.use('/api/auth', authRoutes);
 app.use('/api/menus', autenticar, menusRoutes);
 app.use('/api/pessoas', autenticar, pessoasRoutes);
