@@ -6,6 +6,7 @@ import path from 'path';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from '../docs/swagger.js';
 
+
 import authRoutes from '../routes/auth.js';
 import menusRoutes from '../routes/menus.js';
 import pessoasRoutes from '../routes/pessoas.js';
@@ -13,6 +14,9 @@ import usuariosRoutes from '../routes/usuarios.js';
 import autenticar from '../middleware/authMiddleware.js';
 
 const app = express();
+
+
+console.log('Servidores do Swagger:', swaggerSpec.servers);
 
 // Middlewares
 app.use(cors());
@@ -26,6 +30,9 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec, { explorer: true })
 );
+
+
+
 
 // ----------------------------
 // Arquivos estáticos da pasta public
