@@ -20,14 +20,14 @@ const __dirname = path.resolve();
 // Middlewares
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public'))); // serve arquivos estáticos
+app.use(express.static(path.join(process.cwd(), 'public')));
 
 // Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Página inicial — agora usando index.html do public
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
 });
 
 // Rotas da API
