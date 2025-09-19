@@ -14,18 +14,17 @@ import autenticar from '../middleware/authMiddleware.js';
 
 const app = express();
 
-// Necessário para montar caminhos absolutos para sendFile
-const __dirname = path.resolve();
-
 // Middlewares
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(process.cwd(), 'public')));
 
-// Swagger UI
+// Swagger UI (sempre primeiro para evitar conflito com arquivos estáticos)
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Página inicial — agora usando index.html do public
+// Arquivos estáticos da pasta public
+app.use(express.static(path.join(process.cwd(), 'public')));
+
+// Página inicial usando index.html
 app.get('/', (req, res) => {
   res.sendFile(path.join(process.cwd(), 'public', 'index.html'));
 });
