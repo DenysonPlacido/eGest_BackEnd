@@ -8,16 +8,86 @@ const router = express.Router();
 router.use(autenticar);
 
 /**
- * GET /api/menus
- * Retorna os menus do usuário autenticado (estrutura hierárquica)
+ * @swagger
+ * tags:
+ *   name: Menus
+ *   description: Endpoints para gerenciamento de menus do usuário autenticado
  */
+
+/**
+ * @swagger
+ * /api/menus:
+ *   get:
+ *     summary: Retorna os menus do usuário autenticado (estrutura hierárquica)
+ *     tags: [Menus]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Estrutura de menus do usuário
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   nome:
+ *                     type: string
+ *                   icone:
+ *                     type: string
+ *                   caminho:
+ *                     type: string
+ *                   tipo:
+ *                     type: string
+ *                     enum: [menu, submenu, acao]
+ *                   submenus:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                         nome:
+ *                           type: string
+ *                         icone:
+ *                           type: string
+ *                         caminho:
+ *                           type: string
+ *                         tipo:
+ *                           type: string
+ *                           enum: [submenu, acao]
+ *                         submenus:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                         acoes:
+ *                           type: array
+ *                           items:
+ *                             type: object
+ *                             properties:
+ *                               id:
+ *                                 type: integer
+ *                               nome:
+ *                                 type: string
+ *                               icone:
+ *                                 type: string
+ *                               caminho:
+ *                                 type: string
+ *       401:
+ *         description: Não autorizado / Token inválido
+ *       500:
+ *         description: Erro interno do servidor
+ */
+
 router.get('/', async (req, res) => {
   const client = await req.pool.connect();
   try {
     const usuarioId = req.user.id; // obtido do token
     await client.query('BEGIN');
 
-    // Query para buscar menus
     const query = `
       SELECT DISTINCT ON (m.ordem)
         m.id, m.nome, m.icone, m.caminho, m.tipo, m.hierarquia_pai
@@ -35,13 +105,12 @@ router.get('/', async (req, res) => {
 
     await client.query('COMMIT');
 
-    // Construção da hierarquia
     const estrutura = [];
-    const menuMap = {};        // chave: nome|caminho
-    const submenuMap = {};     // chave: id do submenu
-    const menuIdMap = {};      // chave: id do menu
+    const menuMap = {};
+    const submenuMap = {};
+    const menuIdMap = {};
 
-    // Primeiro: menus
+    // Menus
     menus.forEach(item => {
       if (item.tipo === 'menu') {
         const key = `${item.nome}|${item.caminho}`;
@@ -62,14 +131,11 @@ router.get('/', async (req, res) => {
       }
     });
 
-    // Segundo: submenus
+    // Submenus
     menus.forEach(item => {
       if (item.tipo === 'submenu') {
         const menuPai = menuIdMap[item.hierarquia_pai];
-        if (!menuPai) {
-          console.warn('Submenu sem menu pai:', item.nome, item.hierarquia_pai);
-          return;
-        }
+        if (!menuPai) return;
         const sub = {
           id: item.id,
           nome: item.nome,
@@ -84,7 +150,7 @@ router.get('/', async (req, res) => {
       }
     });
 
-    // Terceiro: ações
+    // Ações
     menus.forEach(item => {
       if (item.tipo === 'acao') {
         const parentSub = submenuMap[item.hierarquia_pai];
@@ -96,7 +162,6 @@ router.get('/', async (req, res) => {
             caminho: item.caminho
           });
         } else {
-          // fallback: se ação está direto no menu
           const parentMenu = menuIdMap[item.hierarquia_pai];
           if (parentMenu) {
             parentMenu.acoes.push({
@@ -122,76 +187,3 @@ router.get('/', async (req, res) => {
 });
 
 export default router;
-
-
-
-/**
- * @swagger
- * tags:
- *   name: Menus
- *   description: Endpoints relacionados aos menus do sistema
-
- * /api/menus:
- *   get:
- *     summary: Retorna os menus do usuário autenticado
- *     tags: [Menus]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Lista de menus hierárquicos
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   nome:
- *                     type: string
- *                   icone:
- *                     type: string
- *                   caminho:
- *                     type: string
- *                   tipo:
- *                     type: string
- *                   submenus:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         nome:
- *                           type: string
- *                         icone:
- *                           type: string
- *                         caminho:
- *                           type: string
- *                         tipo:
- *                           type: string
- *                         acoes:
- *                           type: array
- *                           items:
- *                             type: object
- *                             properties:
- *                               nome:
- *                                 type: string
- *                               caminho:
- *                                 type: string
- *                               icone:
- *                                 type: string
- *                   acoes:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         nome:
- *                           type: string
- *                         caminho:
- *                           type: string
- *                         icone:
- *                           type: string
- *       401:
- *         description: Token não fornecido ou inválido
- *       500:
- *         description: Erro interno ao buscar menus
- */

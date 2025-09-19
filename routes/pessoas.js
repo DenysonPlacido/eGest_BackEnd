@@ -3,175 +3,35 @@
 import express from 'express';
 const router = express.Router();
 
-// ===================================
-// 🔎 GET /pessoas  (listar pessoas)
-// ===================================
-router.get('/', async (req, res) => {
-  const { pessoa_id, nome, cpf_cnpj, limit = 10, offset = 0 } = req.query;
-
-  const client = await req.pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    await client.query(
-      `CALL selecionar_pessoa($1, $2, $3, $4, $5, $6)`,
-      [
-        pessoa_id || null,
-        nome || null,
-        cpf_cnpj || null,
-        limit,
-        offset,
-        'resultado_cursor'
-      ]
-    );
-
-    const result = await client.query('FETCH ALL IN resultado_cursor');
-    await client.query('COMMIT');
-    res.json(result.rows);
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('❌ Erro ao selecionar pessoas:', err);
-    res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
-  }
-});
-
-// ===================================
-// ➕ POST /pessoas  (inserir pessoa)
-// ===================================
-router.post('/', async (req, res) => {
-  const {
-    tipo_pessoa, cpf_cnpj, nome, data_nascimento,
-    ddd, fone, email, cep, cod_logradouro,
-    numero, cod_bairro, complemento
-  } = req.body;
-
-  const client = await req.pool.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query(
-      `CALL inserir_pessoa($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-      [
-        tipo_pessoa, cpf_cnpj, nome, data_nascimento,
-        ddd, fone, email, cep, cod_logradouro,
-        numero, cod_bairro, complemento
-      ]
-    );
-    await client.query('COMMIT');
-    res.json({ status: 'OK', mensagem: 'Pessoa cadastrada com sucesso' });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('❌ Erro ao inserir pessoa:', err);
-    res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
-  }
-});
-
-// ===================================
-// ✏️ PUT /pessoas/:id  (atualizar pessoa)
-// ===================================
-router.put('/:id', async (req, res) => {
-  const { id } = req.params;
-  const {
-    tipo_pessoa, cpf_cnpj, nome, data_nascimento,
-    ddd, fone, email, cep, cod_logradouro,
-    numero, cod_bairro, complemento
-  } = req.body;
-
-  const client = await req.pool.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query(
-      `CALL atualizar_pessoa($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
-      [
-        id, tipo_pessoa, cpf_cnpj, nome, data_nascimento,
-        ddd, fone, email, cep, cod_logradouro,
-        numero, cod_bairro, complemento
-      ]
-    );
-    await client.query('COMMIT');
-    res.json({ status: 'OK', mensagem: `Pessoa ${id} atualizada com sucesso` });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('❌ Erro ao atualizar pessoa:', err);
-    res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
-  }
-});
-
-// ===================================
-// 🗑️ DELETE /pessoas/:id  (deletar pessoa)
-// ===================================
-router.delete('/:id', async (req, res) => {
-  const { id } = req.params;
-
-  const client = await req.pool.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query(`CALL deletar_pessoa($1)`, [id]);
-    await client.query('COMMIT');
-    res.json({ status: 'OK', mensagem: `Pessoa ${id} deletada com sucesso` });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('❌ Erro ao deletar pessoa:', err);
-    res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
-  }
-});
-
-// ===================================
-// 🔎 GET /pessoas/enderecos/buscar?cep=xxxxx
-// ===================================
-router.get('/enderecos/buscar', async (req, res) => {
-  const { cep } = req.query;
-  try {
-    const result = await req.pool.query(
-      `SELECT cod_logradouro, cod_bairro, nome_logradouro AS logradouro, nome_bairro AS bairro
-       FROM logradouros
-       WHERE cep = $1`,
-      [cep]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ erro: 'Endereço não encontrado' });
-    }
-
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('❌ Erro ao buscar endereço:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-export default router;
-
-
+/**
+ * @swagger
+ * tags:
+ *   name: Pessoas
+ *   description: Gerenciamento de pessoas
+ */
 
 /**
  * @swagger
  * /api/pessoas:
  *   get:
- *     summary: Lista pessoas com filtros opcionais
+ *     summary: Lista pessoas
  *     tags: [Pessoas]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: pessoa_id
  *         schema:
  *           type: integer
+ *         description: ID da pessoa
  *       - in: query
  *         name: nome
  *         schema:
  *           type: string
+ *         description: Nome da pessoa
  *       - in: query
  *         name: cpf_cnpj
  *         schema:
  *           type: string
+ *         description: CPF ou CNPJ da pessoa
  *       - in: query
  *         name: limit
  *         schema:
@@ -191,11 +51,35 @@ export default router;
  *               type: array
  *               items:
  *                 type: object
- *       500:
- *         description: Erro interno ao listar pessoas
  */
+router.get('/', async (req, res) => {
+  const { pessoa_id, nome, cpf_cnpj, limit = 10, offset = 0 } = req.query;
 
-
+  const client = await req.pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      `CALL selecionar_pessoa($1, $2, $3, $4, $5, $6)`,
+      [
+        pessoa_id || null,
+        nome || null,
+        cpf_cnpj || null,
+        limit,
+        offset,
+        'resultado_cursor'
+      ]
+    );
+    const result = await client.query('FETCH ALL IN resultado_cursor');
+    await client.query('COMMIT');
+    res.json(result.rows);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('❌ Erro ao selecionar pessoas:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
 
 /**
  * @swagger
@@ -203,8 +87,6 @@ export default router;
  *   post:
  *     summary: Insere uma nova pessoa
  *     tags: [Pessoas]
- *     security:
- *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -245,25 +127,50 @@ export default router;
  *       200:
  *         description: Pessoa cadastrada com sucesso
  *       500:
- *         description: Erro interno ao inserir pessoa
+ *         description: Erro interno no servidor
  */
+router.post('/', async (req, res) => {
+  const {
+    tipo_pessoa, cpf_cnpj, nome, data_nascimento,
+    ddd, fone, email, cep, cod_logradouro,
+    numero, cod_bairro, complemento
+  } = req.body;
 
-
+  const client = await req.pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      `CALL inserir_pessoa($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+      [
+        tipo_pessoa, cpf_cnpj, nome, data_nascimento,
+        ddd, fone, email, cep, cod_logradouro,
+        numero, cod_bairro, complemento
+      ]
+    );
+    await client.query('COMMIT');
+    res.json({ status: 'OK', mensagem: 'Pessoa cadastrada com sucesso' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('❌ Erro ao inserir pessoa:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
 
 /**
  * @swagger
  * /api/pessoas/{id}:
  *   put:
- *     summary: Atualiza os dados de uma pessoa
+ *     summary: Atualiza uma pessoa existente
  *     tags: [Pessoas]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
+ *         description: ID da pessoa
  *     requestBody:
  *       required: true
  *       content:
@@ -300,33 +207,74 @@ export default router;
  *       200:
  *         description: Pessoa atualizada com sucesso
  *       500:
- *         description: Erro interno ao atualizar pessoa
+ *         description: Erro interno no servidor
  */
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const {
+    tipo_pessoa, cpf_cnpj, nome, data_nascimento,
+    ddd, fone, email, cep, cod_logradouro,
+    numero, cod_bairro, complemento
+  } = req.body;
 
-
+  const client = await req.pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      `CALL atualizar_pessoa($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
+      [
+        id, tipo_pessoa, cpf_cnpj, nome, data_nascimento,
+        ddd, fone, email, cep, cod_logradouro,
+        numero, cod_bairro, complemento
+      ]
+    );
+    await client.query('COMMIT');
+    res.json({ status: 'OK', mensagem: `Pessoa ${id} atualizada com sucesso` });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('❌ Erro ao atualizar pessoa:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
 
 /**
  * @swagger
  * /api/pessoas/{id}:
  *   delete:
- *     summary: Remove uma pessoa pelo ID
+ *     summary: Deleta uma pessoa
  *     tags: [Pessoas]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
+ *         description: ID da pessoa
  *     responses:
  *       200:
  *         description: Pessoa deletada com sucesso
  *       500:
- *         description: Erro interno ao deletar pessoa
+ *         description: Erro interno no servidor
  */
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
 
-
+  const client = await req.pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(`CALL deletar_pessoa($1)`, [id]);
+    await client.query('COMMIT');
+    res.json({ status: 'OK', mensagem: `Pessoa ${id} deletada com sucesso` });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('❌ Erro ao deletar pessoa:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
 
 /**
  * @swagger
@@ -334,14 +282,13 @@ export default router;
  *   get:
  *     summary: Busca endereço pelo CEP
  *     tags: [Pessoas]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: cep
  *         required: true
  *         schema:
  *           type: string
+ *         description: CEP a ser consultado
  *     responses:
  *       200:
  *         description: Endereço encontrado
@@ -361,5 +308,27 @@ export default router;
  *       404:
  *         description: Endereço não encontrado
  *       500:
- *         description: Erro interno ao buscar endereço
+ *         description: Erro interno no servidor
  */
+router.get('/enderecos/buscar', async (req, res) => {
+  const { cep } = req.query;
+  try {
+    const result = await req.pool.query(
+      `SELECT cod_logradouro, cod_bairro, nome_logradouro AS logradouro, nome_bairro AS bairro
+       FROM logradouros
+       WHERE cep = $1`,
+      [cep]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ erro: 'Endereço não encontrado' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('❌ Erro ao buscar endereço:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+export default router;
