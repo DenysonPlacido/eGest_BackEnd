@@ -49,7 +49,7 @@ app.get('/', (req, res) => {
 // Rotas da API protegidas
 // ----------------------------
 app.use('/api/auth', authRoutes);
-app.use('/api/menus', autenticar, menusRoutes);
+app.use('/api/menus', menusRoutes);
 app.use('/api/pessoas', autenticar, pessoasRoutes);
 app.use('/api/usuarios', autenticar, usuariosRoutes);
 
