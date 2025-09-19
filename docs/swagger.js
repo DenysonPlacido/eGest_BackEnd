@@ -1,41 +1,37 @@
 // /docs/swagger.js
 import swaggerJSDoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
 
-const swaggerDefinition = {
-  openapi: '3.0.0',
-  info: {
-    title: 'eGest API',
-    version: '1.0.0',
-    description: 'Documentação da API do eGest',
-  },
-  servers: [
-     {
-      url: 'https://e-gest-back-end.vercel.app',
-      description: 'Servidor de produção',
+// Configuração base do Swagger (OpenAPI 3.0)
+export const swaggerSpec = swaggerJSDoc({
+  definition: {
+    openapi: '3.0.3',
+    info: {
+      title: 'eGest API',
+      version: '1.0.0',
+      description: 'Documentação da API eGest',
     },
-  ],
-  components: {
-    securitySchemes: {
-      bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
+    servers: [
+      {
+        url: 'https://e-gest-back-end.vercel.app',
+        description: 'Servidor de produção',
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
       },
     },
+    security: [{ bearerAuth: [] }],
   },
-  security: [
-    {
-      bearerAuth: [],
-    },
+  apis: [
+    './routes/auth.js',
+    './routes/menus.js',
+    './routes/pessoas.js',
+    './routes/usuarios.js',
   ],
-};
+});
 
-const options = {
-  swaggerDefinition,
-  apis: ['./routes/*.js'], // Caminho para os arquivos com comentários Swagger
-};
-
-const swaggerSpec = swaggerJSDoc(options);
-
-export { swaggerUi, swaggerSpec };
