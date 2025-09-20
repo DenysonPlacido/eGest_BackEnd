@@ -5,62 +5,6 @@ import { getPool } from '../db.js';
 
 const router = express.Router();
 
-/**
- * @swagger
- * tags:
- *   name: Auth
- *   description: Endpoints de autenticação
- *
- * /api/auth/login:
- *   post:
- *     summary: Realiza login do usuário
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - username
- *               - senha
- *             properties:
- *               username:
- *                 type: string
- *                 example: "admin"
- *               senha:
- *                 type: string
- *                 example: "123456"
- *     responses:
- *       200:
- *         description: Login realizado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 usuario:
- *                   type: object
- *                   properties:
- *                     id:
- *                       type: integer
- *                     nome:
- *                       type: string
- *                     tipo_usuario:
- *                       type: string
- *                     empresa_id:
- *                       type: integer
- *                 token:
- *                   type: string
- *                 tempoSessao:
- *                   type: integer
- *       400:
- *         description: Campos obrigatórios ausentes
- *       401:
- *         description: Credenciais inválidas
- *       500:
- *         description: Erro interno no servidor
- */
 router.post('/login', async (req, res) => {
   const { username, senha } = req.body;
   const empresa_id = parseInt(req.headers['x-empresa-id'], 10);

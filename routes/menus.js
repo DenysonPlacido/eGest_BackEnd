@@ -4,83 +4,9 @@ import autenticar from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+
 // Middleware de autenticação para todos os endpoints desse router
 router.use(autenticar);
-
-/**
- * @swagger
- * tags:
- *   name: Menus
- *   description: Endpoints para gerenciamento de menus do usuário autenticado
- */
-
-/**
- * @swagger
- * /api/menus:
- *   get:
- *     summary: Retorna os menus do usuário autenticado (estrutura hierárquica)
- *     tags: [Menus]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Estrutura de menus do usuário
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   nome:
- *                     type: string
- *                   icone:
- *                     type: string
- *                   caminho:
- *                     type: string
- *                   tipo:
- *                     type: string
- *                     enum: [menu, submenu, acao]
- *                   submenus:
- *                     type: array
- *                     items:
- *                       type: object
- *                       properties:
- *                         id:
- *                           type: integer
- *                         nome:
- *                           type: string
- *                         icone:
- *                           type: string
- *                         caminho:
- *                           type: string
- *                         tipo:
- *                           type: string
- *                           enum: [submenu, acao]
- *                         submenus:
- *                           type: array
- *                           items:
- *                             type: object
- *                         acoes:
- *                           type: array
- *                           items:
- *                             type: object
- *                             properties:
- *                               id:
- *                                 type: integer
- *                               nome:
- *                                 type: string
- *                               icone:
- *                                 type: string
- *                               caminho:
- *                                 type: string
- *       401:
- *         description: Não autorizado / Token inválido
- *       500:
- *         description: Erro interno do servidor
- */
 
 router.get('/', async (req, res) => {
   const client = await req.pool.connect();

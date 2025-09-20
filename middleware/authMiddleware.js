@@ -11,8 +11,8 @@ const autenticar = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 🔑 empresa_id vem do header
-    const empresa_id = parseInt(req.headers['x-empresa-id'], 10);
+    // 🔑 empresa_id pode vir do header ou do token
+    const empresa_id = parseInt(req.headers['x-empresa-id'], 10) || decoded.empresa_id;
 
     if (!empresa_id) {
       return res.status(400).json({ message: 'Empresa não informada' });
@@ -28,7 +28,5 @@ const autenticar = (req, res, next) => {
     res.status(401).json({ message: 'Token inválido ou expirado' });
   }
 };
-
-
 
 export default autenticar;
