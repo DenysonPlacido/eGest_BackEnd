@@ -10,13 +10,15 @@ const autenticar = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const empresa_id = decoded.empresa_id;
+
+    // 🔑 empresa_id vem do header
+    const empresa_id = parseInt(req.headers['x-empresa-id'], 10);
 
     if (!empresa_id) {
-      return res.status(400).json({ message: 'Empresa não encontrada no token' });
+      return res.status(400).json({ message: 'Empresa não informada' });
     }
 
-    const pool = getPool(empresa_id); // garante criação se não existir
+    const pool = getPool(empresa_id); // garante que cria se não existir
     req.user = decoded;
     req.pool = pool;
 
@@ -26,6 +28,7 @@ const autenticar = (req, res, next) => {
     res.status(401).json({ message: 'Token inválido ou expirado' });
   }
 };
+
 
 
 export default autenticar;
