@@ -62,7 +62,8 @@ router.get('/', async (req, res) => {
               cep, cod_logradouro, numero, cod_bairro, complemento
        FROM pessoas
        WHERE ($1 = '' OR nome ILIKE '%' || $1 || '%')
-         AND ($2 = '' OR pessoa_id = $2)
+         AND ($2 = '' OR pessoa_id = CAST($2 AS INTEGER))
+
        ORDER BY pessoa_id
        LIMIT $3 OFFSET $4`,
       [nome, pessoa_id, limit, offset]
