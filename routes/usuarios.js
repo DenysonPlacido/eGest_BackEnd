@@ -3,61 +3,6 @@ import express from 'express';
 
 const router = express.Router();
 
-/**
- * @swagger
- * tags:
- *   name: Usuarios
- *   description: Endpoints para gerenciamento de usuários
- */
-
-/**
- * @swagger
- * /api/usuarios:
- *   get:
- *     summary: Lista usuários com paginação opcional
- *     tags: [Usuarios]
- *     parameters:
- *       - in: query
- *         name: id
- *         schema:
- *           type: integer
- *         description: Filtrar por ID do usuário
- *       - in: query
- *         name: login
- *         schema:
- *           type: string
- *         description: Filtrar por login
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 10
- *       - in: query
- *         name: offset
- *         schema:
- *           type: integer
- *           default: 0
- *     responses:
- *       200:
- *         description: Lista de usuários
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *                 properties:
- *                   id:
- *                     type: integer
- *                   login:
- *                     type: string
- *                   tipo_usuario:
- *                     type: string
- *                   empresa_id:
- *                     type: integer
- *       500:
- *         description: Erro interno do servidor
- */
 router.get('/', async (req, res) => {
   const { id, login, limit = 10, offset = 0 } = req.query;
   const client = await req.pool.connect();
@@ -82,40 +27,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/usuarios/{id}:
- *   get:
- *     summary: Busca usuário por ID
- *     tags: [Usuarios]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID do usuário
- *     responses:
- *       200:
- *         description: Usuário encontrado
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   type: integer
- *                 login:
- *                   type: string
- *                 tipo_usuario:
- *                   type: string
- *                 empresa_id:
- *                   type: integer
- *       404:
- *         description: Usuário não encontrado
- *       500:
- *         description: Erro interno do servidor
- */
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
   const client = await req.pool.connect();
@@ -144,42 +55,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/usuarios:
- *   post:
- *     summary: Cria novo usuário
- *     tags: [Usuarios]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - pessoa_id
- *               - status_usuario
- *               - tipo_usuario
- *               - senha
- *             properties:
- *               pessoa_id:
- *                 type: integer
- *               status_usuario:
- *                 type: string
- *               tipo_usuario:
- *                 type: string
- *               senha:
- *                 type: string
- *               empresa_id:
- *                 type: integer
- *               login:
- *                 type: string
- *     responses:
- *       201:
- *         description: Usuário criado com sucesso
- *       500:
- *         description: Erro interno do servidor
- */
 router.post('/', async (req, res) => {
   const { pessoa_id, status_usuario, tipo_usuario, senha, empresa_id, login } = req.body;
   const client = await req.pool.connect();
@@ -202,44 +77,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/usuarios/{id}:
- *   put:
- *     summary: Atualiza usuário existente
- *     tags: [Usuarios]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID do usuário
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               pessoa_id:
- *                 type: integer
- *               status_usuario:
- *                 type: string
- *               tipo_usuario:
- *                 type: string
- *               senha:
- *                 type: string
- *               empresa_id:
- *                 type: integer
- *               login:
- *                 type: string
- *     responses:
- *       200:
- *         description: Usuário atualizado com sucesso
- *       500:
- *         description: Erro interno do servidor
- */
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { pessoa_id, status_usuario, tipo_usuario, senha, empresa_id, login } = req.body;
@@ -263,25 +100,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/usuarios/{id}:
- *   delete:
- *     summary: Remove usuário por ID
- *     tags: [Usuarios]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID do usuário
- *     responses:
- *       200:
- *         description: Usuário deletado com sucesso
- *       500:
- *         description: Erro interno do servidor
- */
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   const client = await req.pool.connect();
