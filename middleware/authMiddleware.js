@@ -26,3 +26,6 @@ const autenticar = (req, res, next) => {
     res.status(401).json({ message: 'Token inválido ou expirado' });
   }
 };
+
+
+export default autenticar;
