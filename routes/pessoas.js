@@ -1,14 +1,24 @@
 // /workspaces/eGest_BackEnd/routes/pessoas.js
-
 import express from 'express';
+import autenticar from '../middleware/authMiddleware.js';
+
 const router = express.Router();
 
+// 🔐 Aplica autenticação em todas as rotas
+router.use(autenticar);
+
+// 📌 Cadastro de pessoa
 router.post('/', async (req, res) => {
   const {
     tipo_pessoa, cpf_cnpj, nome, data_nascimento,
     ddd, fone, email, cep, cod_logradouro,
     numero, cod_bairro, complemento
   } = req.body;
+
+  // ✅ Validação básica
+  if (!cpf_cnpj || !nome || !tipo_pessoa) {
+    return res.status(400).json({ error: 'Campos obrigatórios não preenchidos' });
+  }
 
   const client = await req.pool.connect();
   try {
@@ -25,13 +35,19 @@ router.post('/', async (req, res) => {
     res.json({ status: 'OK', mensagem: 'Pessoa cadastrada com sucesso' });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('❌ Erro ao inserir pessoa:', err);
+    console.error(`❌ Erro ao inserir pessoa (usuário ${req.user.id}):`, err);
+
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'CPF/CNPJ já cadastrado' });
+    }
+
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
   }
 });
 
+// ✏️ Atualização de pessoa
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const {
@@ -55,13 +71,14 @@ router.put('/:id', async (req, res) => {
     res.json({ status: 'OK', mensagem: `Pessoa ${id} atualizada com sucesso` });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('❌ Erro ao atualizar pessoa:', err);
+    console.error(`❌ Erro ao atualizar pessoa (usuário ${req.user.id}):`, err);
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
   }
 });
 
+// 🗑️ Exclusão de pessoa
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
 
@@ -73,15 +90,21 @@ router.delete('/:id', async (req, res) => {
     res.json({ status: 'OK', mensagem: `Pessoa ${id} deletada com sucesso` });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error('❌ Erro ao deletar pessoa:', err);
+    console.error(`❌ Erro ao deletar pessoa (usuário ${req.user.id}):`, err);
     res.status(500).json({ error: err.message });
   } finally {
     client.release();
   }
 });
 
+// 📍 Busca de endereço por CEP
 router.get('/enderecos/buscar', async (req, res) => {
   const { cep } = req.query;
+
+  if (!cep) {
+    return res.status(400).json({ erro: 'CEP não informado' });
+  }
+
   try {
     const result = await req.pool.query(
       `SELECT cod_logradouro, cod_bairro, nome_logradouro AS logradouro, nome_bairro AS bairro
@@ -96,7 +119,7 @@ router.get('/enderecos/buscar', async (req, res) => {
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.error('❌ Erro ao buscar endereço:', err);
+    console.error(`❌ Erro ao buscar endereço (usuário ${req.user.id}):`, err);
     res.status(500).json({ error: err.message });
   }
 });
