@@ -47,6 +47,40 @@ router.post('/', async (req, res) => {
   }
 });
 
+
+
+
+
+// Buscar pessoas
+router.get('/', async (req, res) => {
+  const { nome = '', pessoa_id = '', limit = 10, offset = 0 } = req.query;
+
+  const client = await req.pool.connect();
+  try {
+    const result = await client.query(
+      `SELECT pessoa_id, tipo_pessoa, cpf_cnpj, nome, data_nascimento, ddd, fone, email,
+              cep, cod_logradouro, numero, cod_bairro, complemento
+       FROM pessoas
+       WHERE ($1 = '' OR nome ILIKE '%' || $1 || '%')
+         AND ($2 = '' OR pessoa_id = $2)
+       ORDER BY pessoa_id
+       LIMIT $3 OFFSET $4`,
+      [nome, pessoa_id, limit, offset]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error('❌ Erro ao listar pessoas:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
+
+
+
+
 // ✏️ Atualização de pessoa
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
