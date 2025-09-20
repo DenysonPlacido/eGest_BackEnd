@@ -1,6 +1,6 @@
 // /middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
-import { dbPools } from '../db.js';
+import { getPool } from '../db.js';
 
 const autenticar = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -12,11 +12,11 @@ const autenticar = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const empresa_id = decoded.empresa_id;
 
-    const pool = dbPools[empresa_id];
-    if (!pool) {
-      return res.status(400).json({ message: 'Empresa inválida ou sem pool configurado' });
+    if (!empresa_id) {
+      return res.status(400).json({ message: 'Empresa não encontrada no token' });
     }
 
+    const pool = getPool(empresa_id); // garante criação se não existir
     req.user = decoded;
     req.pool = pool;
 
@@ -26,5 +26,3 @@ const autenticar = (req, res, next) => {
     res.status(401).json({ message: 'Token inválido ou expirado' });
   }
 };
-
-export default autenticar;
