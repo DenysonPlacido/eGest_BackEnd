@@ -24,7 +24,11 @@ app.use(express.json());
 // Swagger UI oficial (funciona no Vercel)
 // ----------------------------
 // Rota do Swagger UI
-app.use('/api-docs', autenticar, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// app.use('/api-docs', autenticar, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// NÃO PROTEJA a rota do Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 
 // Rota para servir o JSON da documentação
