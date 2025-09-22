@@ -1,3 +1,7 @@
+// /docs/swagger.js
+import swaggerJSDoc from 'swagger-jsdoc';
+
+// Configuração base do Swagger (OpenAPI 3.0)
 export const swaggerSpec = swaggerJSDoc({
   definition: {
     openapi: '3.0.3',
@@ -24,6 +28,7 @@ export const swaggerSpec = swaggerJSDoc({
     security: [{ bearerAuth: [] }],
   },
   apis: [
-    './docs/swaggerTags/*.js',
+    '/swaggerTags/pessoas.js',
   ],
 });
+
