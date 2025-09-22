@@ -6,7 +6,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configuração base do Swagger (OpenAPI 3.0)
 export const swaggerSpec = swaggerJSDoc({
   definition: {
     openapi: '3.0.3',
@@ -32,5 +31,7 @@ export const swaggerSpec = swaggerJSDoc({
     },
     security: [{ bearerAuth: [] }],
   },
-  apis: [path.resolve(__dirname, './swaggerTags/*.js')],  
+  apis: [
+    path.join(process.cwd(), 'docs/swaggerTags/*.js'),
+  ],
 });
