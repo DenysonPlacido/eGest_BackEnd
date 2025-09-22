@@ -28,7 +28,8 @@ export const swaggerSpec = swaggerJSDoc({
     security: [{ bearerAuth: [] }],
   },
   apis: [
-    '../docs/swaggerTags/*.js',
+    '../docs/swaggerTags/pessoas.js',
+    '/swaggerTags/pessoas.js',
     '../routes/auth.js',
     '../routes/menus.js',
     '../routes/pessoas.js',
