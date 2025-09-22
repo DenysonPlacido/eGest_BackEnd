@@ -28,7 +28,35 @@ app.use(express.json());
 // app.use('/api-docs', autenticar, swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // NÃO PROTEJA a rota do Swagger
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+app.use('/api-docs', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>Swagger UI</title>
+      <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css" />
+    </head>
+    <body>
+      <div id="swagger-ui"></div>
+      <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+      <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-standalone-preset.js"></script>
+      <script>
+        window.onload = () => {
+          SwaggerUIBundle({
+            url: '/api/swagger.json',
+            dom_id: '#swagger-ui',
+            presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+            layout: 'StandaloneLayout'
+          });
+        };
+      </script>
+    </body>
+    </html>
+  `);
+});
 
 
 // Rota para servir o JSON da documentação
