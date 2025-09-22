@@ -2,7 +2,7 @@
 
 // 📌 POST /api/pessoas – Cadastro de pessoa
 /**
- * @swagger
+ * @openapi
  * /api/pessoas:
  *   post:
  *     summary: Cadastra uma nova pessoa
@@ -62,7 +62,7 @@
 // 🔍 GET /api/pessoas – Buscar pessoas
 
 /**
- * @swagger
+ * @openapi
  * /api/pessoas:
  *   get:
  *     summary: Lista pessoas com filtros opcionais
@@ -103,7 +103,7 @@
 // ✏️ PUT /api/pessoas/{id} – Atualizar pessoa
 
 /**
- * @swagger
+ * @openapi
  * /api/pessoas/{id}:
  *   put:
  *     summary: Atualiza os dados de uma pessoa
@@ -162,7 +162,7 @@
 // 🗑️ DELETE /api/pessoas/{id} – Excluir pessoa
 
 /**
- * @swagger
+ * @openapi
  * /api/pessoas/{id}:
  *   delete:
  *     summary: Exclui uma pessoa pelo ID
@@ -189,7 +189,7 @@
 // 📍 GET /api/pessoas/enderecos/buscar – Buscar endereço por CEP
 
 /**
- * @swagger
+ * @openapi
  * /api/pessoas/enderecos/buscar:
  *   get:
  *     summary: Busca endereço pelo CEP
