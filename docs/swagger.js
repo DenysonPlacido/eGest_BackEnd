@@ -2,6 +2,11 @@
 import swaggerJSDoc from 'swagger-jsdoc';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+console.log('📂 Procurando arquivos swaggerTags em:', path.join(process.cwd(), 'docs/swaggerTags/*.js'));
+console.log('📂 Conteúdo da pasta:', fs.readdirSync(path.join(process.cwd(), 'docs/swaggerTags')));
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,6 +37,8 @@ export const swaggerSpec = swaggerJSDoc({
     security: [{ bearerAuth: [] }],
   },
   apis: [
-    path.join(process.cwd(), 'docs/swaggerTags/*.js'),
-  ],
+  path.resolve(__dirname, 'swaggerTags/*.js'),
+  path.join(process.cwd(), 'docs/swaggerTags/*.js')
+]
+,
 });
