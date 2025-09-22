@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>eGest Back-End</title>
-  <link rel="icon" type="image/x-icon" href="backend.png">
+  <link rel="icon" type="image/png" href="backend.png">
   <style>
     body {
       margin: 0;
@@ -14,31 +14,89 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-direction: column;
       height: 100vh;
       text-align: center;
     }
     h1 {
       font-size: 2.5rem;
+      text-shadow: 0 0 5px #0f0, 0 0 10px #0f0, 0 0 20px #0f0;
+      animation: pulse 2s infinite alternate;
+    }
+    @keyframes pulse {
+      from { text-shadow: 0 0 5px #0f0; }
+      to { text-shadow: 0 0 20px #0f0, 0 0 40px #0f0; }
     }
     .status {
       font-size: 1.2rem;
-      margin-top: 10px;
+      margin: 10px 0 20px;
       color: #ccc;
+      animation: blink 1.5s infinite alternate;
+    }
+    @keyframes blink {
+      from { opacity: 0.6; }
+      to { opacity: 1; }
+    }
+    .links {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
     a {
-      display: block;
-      margin-top: 20px;
+      display: inline-block;
+      padding: 10px 20px;
+      border: 1px solid #0ff;
+      border-radius: 8px;
+      background: rgba(0,255,255,0.1);
       color: #0ff;
       text-decoration: none;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
+      transition: 0.2s;
+    }
+    a:hover {
+      background: rgba(0,255,255,0.3);
+      transform: scale(1.05);
+    }
+    footer {
+      margin-top: 30px;
+      font-size: 0.9rem;
+      color: #666;
     }
   </style>
 </head>
 <body>
-  <div>
-    <h1>✅ Back-end funcionando!</h1>
-    <div class="status">Servidor eGest ativo e operacional</div>
-    <a href="/api-docs" target="_blank">📖 Ver documentação da API (Swagger)</a>
+  <h1>✅ eGest Back-End</h1>
+  <div class="status">Verificando status do servidor...</div>
+
+  <div class="links">
+    <a href="/api-docs" target="_blank">📖 Documentação da API (Swagger)</a>
+    <a href="/api/swagger.json" target="_blank">📄 Swagger JSON</a>
+    <a href="https://e-gest.vercel.app/" target="_blank">🌐 Projeto Front-End</a>
   </div>
+
+  <footer>
+    eGest Back-End • v1.0.0 • <span id="year"></span>
+  </footer>
+
+  <script>
+    // Atualiza ano do footer
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Faz checagem do servidor
+    fetch('/health')
+      .then(r => {
+        if (r.ok) {
+          document.querySelector('.status').innerText = 'Servidor: ✅ Online';
+          document.querySelector('.status').style.color = '#0f0';
+        } else {
+          document.querySelector('.status').innerText = 'Servidor: ❌ Offline';
+          document.querySelector('.status').style.color = '#f00';
+        }
+      })
+      .catch(() => {
+        document.querySelector('.status').innerText = 'Servidor: ❌ Offline';
+        document.querySelector('.status').style.color = '#f00';
+      });
+  </script>
 </body>
 </html>
