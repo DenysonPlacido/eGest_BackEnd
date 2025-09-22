@@ -1,6 +1,6 @@
+// /workspaces/eGest_BackEnd/docs/swaggerTags/pessoas.js
+
 // 📌 POST /api/pessoas – Cadastro de pessoa
-
-
 /**
  * @swagger
  * /api/pessoas:
