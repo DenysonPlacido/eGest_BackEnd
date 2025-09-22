@@ -58,6 +58,15 @@ app.use('/api-docs', (req, res) => {
   `);
 });
 
+// Rota de health check
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: Date.now()
+  });
+});
+
 
 // Rota para servir o JSON da documentação
 app.get('/api/swagger.json', (req, res) => {
