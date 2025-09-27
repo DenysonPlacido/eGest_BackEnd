@@ -37,7 +37,7 @@ router.get('/', async (req, res) => {
                     join menus_sistema m on
                       m.id = pmp.menu_id
                     where
-                      u.id = 1
+                      u.id = $1
                       and m.ordem is not null
                     order by
                       m.ordem asc;
