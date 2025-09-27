@@ -23,8 +23,8 @@ router.get('/', async (req, res) => {
                       m.icone,
                       m.caminho,
                       m.tipo,
-                      m.hierarquia_pai,
-                     -- m.ordem
+                      m.hierarquia_pai
+                     -- ,m.ordem
                     from
                       usuarios u
                     join usuario_perfil up on
