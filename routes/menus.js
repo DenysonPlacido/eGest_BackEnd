@@ -15,15 +15,33 @@ router.get('/', async (req, res) => {
     await client.query('BEGIN');
 
     const query = `
-      SELECT DISTINCT ON (m.ordem)
-        m.id, m.nome, m.icone, m.caminho, m.tipo, m.hierarquia_pai
-      FROM usuarios u
-        JOIN usuario_perfil up ON up.usuario_id = u.id
-        JOIN perfis p ON p.id = up.perfil_id
-        JOIN perfil_menu_permissao pmp ON pmp.perfil_id = p.id AND pmp.ativo = TRUE
-        JOIN menus_sistema m ON m.id = pmp.menu_id
-      WHERE u.id = $1
-      ORDER BY m.ordem ASC
+                    select
+                      distinct on
+                      (m.ordem)
+                            m.id,
+                      m.nome,
+                      m.icone,
+                      m.caminho,
+                      m.tipo,
+                      m.hierarquia_pai,
+                      m.ordem
+                    from
+                      usuarios u
+                    join usuario_perfil up on
+                      up.usuario_id = u.id
+                    join perfis p on
+                      p.id = up.perfil_id
+                    join perfil_menu_permissao pmp on
+                      pmp.perfil_id = p.id
+                      and pmp.ativo = true
+                    join menus_sistema m on
+                      m.id = pmp.menu_id
+                    where
+                      u.id = 1
+                      and m.ordem is not null
+                    order by
+                      m.ordem asc;
+
     `;
 
     const result = await client.query(query, [usuarioId]);
