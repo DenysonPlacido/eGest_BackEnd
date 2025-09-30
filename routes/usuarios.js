@@ -57,24 +57,32 @@ router.get('/', async (req, res) => {
   const client = await req.pool.connect();
   try {
     const result = await client.query(
-      `select
-        u.id,
-        u.login,
-        u.data_cadastro,
-        P.nome,
-        u.status_usuario
-      from
-        public.usuarios U
-        left join pessoas p 
-          on U.pessoa_id = P.pessoa_id 
-      where
-          ($1 = ''
-          or P.nome ilike '%' || $1 || '%')
-        and ($2 = ''
-          or U.login ilike '%' || $2 || '%')
-      order by
-        P.nome
-      LIMIT $3 OFFSET $4`,
+      `
+        select
+          u.id,
+          u.login,
+          u.data_cadastro,
+          p.nome,
+          p.cpf_cnpj,
+          su.descricao as status_usuario
+        from
+          public.usuarios u
+          left join pessoas p 
+            on u.pessoa_id = p.pessoa_id
+          join status_usuarios su 
+            on su.status_usuario = u.status_usuario 
+        where
+            ($1 = ''
+            or p.nome ilike '%' || $1 || '%')
+          and ($2 = ''
+            or u.login ilike '%' || $2 || '%')
+          and ($3 = ''
+            or p.cpf_cnpj ilike '%' || $3 || '%')
+        order by
+          p.nome
+        limit $4 offset $5
+
+      `,
       [nome, login, limit, offset]
     );
 
