@@ -52,7 +52,8 @@ router.post('/', async (req, res) => {
 
 // Buscar Usuario
 router.get('/', async (req, res) => {
-  const { nome = '', login = '', limit = 10, offset = 0 } = req.query;
+  const { nome = '', login = '', cpf_cnpj = '', limit = 10, offset = 0 } = req.query;
+
 
   const client = await req.pool.connect();
   try {
@@ -83,7 +84,8 @@ router.get('/', async (req, res) => {
         limit $4 offset $5
 
       `,
-      [nome, login, limit, offset]
+      [nome, login, cpf_cnpj, limit, offset]
+
     );
 
     res.json(result.rows);
