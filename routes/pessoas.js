@@ -59,7 +59,7 @@ router.get('/', async (req, res) => {
   try {
     const result = await client.query(
       `SELECT pessoa_id, tipo_pessoa, cpf_cnpj, nome, data_nascimento, ddd, fone, email,
-              cep, cod_logradouro, numero, cod_bairro, complemento
+              cep, cod_logradouro, numero,  complemento
        FROM pessoas
        WHERE ($1 = '' OR nome ILIKE '%' || $1 || '%')
          AND ($2 = '' OR pessoa_id = CAST($2 AS INTEGER))
