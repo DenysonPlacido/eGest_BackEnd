@@ -76,10 +76,10 @@ router.get('/', async (req, res) => {
           p.complemento,
           l.bairro,
           l.cod_cidade,
-          c."NOME_CIDADE",
-          mi.cod_uf,
-          p2."ID_PAIS",
-          p2."NOME_PAIS"
+          c.nome_cidade ,
+          c.codigo_uf,
+          p2.id_pais,
+          p2.nome_pais
         from
           pessoas p
         left join tipos_pessoas tp on
@@ -87,18 +87,16 @@ router.get('/', async (req, res) => {
         left join logradouros l on
           p.cod_logradouro = l.cod_logradouro
         left join cidades c on
-          l.cod_cidade = c."COD_CIDADE"
-        left join municipios_ibge mi on
-          l.cod_cidade = mi.cod_cidade
+          l.cod_cidade = c.cod_cidade
         left join paises p2 on
-          c."ID_PAIS" = p2."ID_PAIS"
+          c.id_pais = p2.id_pais
         where
           ($1 = ''
-            or nome ilike '%' || $1 || '%')
+            or p.nome ilike '%' || $1 || '%')
           and ($2 = ''
-            or pessoa_id = cast($2 as INTEGER))
+            or p.pessoa_id = cast($2 as INTEGER))
         order by
-          pessoa_id
+          p.pessoa_id
         limit $3 offset $4
       `,
       [nome, pessoa_id, limit, offset]
@@ -112,10 +110,6 @@ router.get('/', async (req, res) => {
     client.release();
   }
 });
-
-
-
-
 
 // ✏️ Atualização de pessoa
 router.put('/:id', async (req, res) => {
@@ -148,49 +142,102 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// 🗑️ Exclusão de pessoa
+// 🗑️ Exclusão lógica de pessoa (ativo = false)
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
 
   const client = await req.pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query(`CALL deletar_pessoa($1)`, [id]);
+
+    const result = await client.query(
+      `UPDATE public.pessoas SET ativo = false, data_alteracao = CURRENT_TIMESTAMP, usuario_alteracao = $2 WHERE pessoa_id = $1`,
+      [id, req.user?.id || 'sistema']
+    );
+
     await client.query('COMMIT');
-    res.json({ status: 'OK', mensagem: `Pessoa ${id} deletada com sucesso` });
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ erro: `Pessoa ${id} não encontrada` });
+    }
+
+    res.json({ status: 'OK', mensagem: `Pessoa ${id} desativada com sucesso` });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error(`❌ Erro ao deletar pessoa (usuário ${req.user.id}):`, err);
-    res.status(500).json({ error: err.message });
+    console.error(`❌ Erro ao desativar pessoa (usuário ${req.user?.id || 'desconhecido'}):`, err);
+    res.status(500).json({ error: 'Erro interno ao desativar pessoa' });
   } finally {
     client.release();
   }
 });
 
-// 📍 Busca de endereço por CEP
-router.get('/enderecos/buscar', async (req, res) => {
-  const { cep } = req.query;
 
-  if (!cep) {
-    return res.status(400).json({ erro: 'CEP não informado' });
-  }
+// 📍 Busca de endereço por múltiplos critérios
+router.get('/enderecos/buscar', async (req, res) => {
+  const { cep, logradouro, bairro, cidade } = req.query;
 
   try {
-    const result = await req.pool.query(
-      `SELECT cod_logradouro, cod_bairro, nome_logradouro AS logradouro, nome_bairro AS bairro
-       FROM logradouros
-       WHERE cep = $1`,
-      [cep]
-    );
+    // Base da query
+    let query = `
+      SELECT
+        l.cod_logradouro,
+        l.nome_do_logradouro,
+        l.cep,
+        l.bairro,
+        l.distrito,
+        l.latitude,
+        l.longitude,
+        c.cod_cidade
+        c.nome_cidade,
+        c.codigo_uf,
+        p.nome_pais
+      FROM public.logradouros l
+      JOIN public.cidades c ON l.cod_cidade = c.cod_cidade
+      JOIN public.paises p ON c.id_pais = p.id_pais
+      WHERE l.ativo = true AND l.visivel = true
+    `;
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ erro: 'Endereço não encontrado' });
+    // Array de cláusulas e parâmetros
+    const conditions = [];
+    const params = [];
+
+    if (cep) {
+      conditions.push(`l.cep = $${params.length + 1}`);
+      params.push(cep);
     }
 
-    res.json(result.rows[0]);
+    if (logradouro) {
+      conditions.push(`l.nome_do_logradouro ILIKE '%' || $${params.length + 1} || '%'`);
+      params.push(logradouro);
+    }
+
+    if (bairro) {
+      conditions.push(`l.bairro ILIKE '%' || $${params.length + 1} || '%'`);
+      params.push(bairro);
+    }
+
+    if (cidade) {
+      conditions.push(`c.nome_cidade ILIKE '%' || $${params.length + 1} || '%'`);
+      params.push(cidade);
+    }
+
+    // Adiciona filtros se houver
+    if (conditions.length > 0) {
+      query += ' AND ' + conditions.join(' AND ');
+    }
+
+    query += ' ORDER BY l.nome_do_logradouro ASC';
+
+    const result = await req.pool.query(query, params);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ erro: 'Nenhum endereço encontrado com os critérios informados' });
+    }
+
+    res.json(result.rows);
   } catch (err) {
-    console.error(`❌ Erro ao buscar endereço (usuário ${req.user.id}):`, err);
-    res.status(500).json({ error: err.message });
+    console.error(`❌ Erro ao buscar endereço (usuário ${req.user?.id || 'desconhecido'}):`, err);
+    res.status(500).json({ error: 'Erro interno ao buscar endereço' });
   }
 });
 
