@@ -58,14 +58,49 @@ router.get('/', async (req, res) => {
   const client = await req.pool.connect();
   try {
     const result = await client.query(
-      `SELECT pessoa_id, tipo_pessoa, cpf_cnpj, nome, data_nascimento, ddd, fone, email,
-              cep, cod_logradouro, numero,  complemento
-       FROM pessoas
-       WHERE ($1 = '' OR nome ILIKE '%' || $1 || '%')
-         AND ($2 = '' OR pessoa_id = CAST($2 AS INTEGER))
-
-       ORDER BY pessoa_id
-       LIMIT $3 OFFSET $4`,
+      `
+        select
+          p.pessoa_id,
+          p.tipo_pessoa,
+          tp.descricao,
+          p.cpf_cnpj,
+          p.nome,
+          p.data_nascimento,
+          p.ddd,
+          p.fone,
+          p.email,
+          l.cep,
+          p.cod_logradouro,
+          l.nome_do_logradouro,
+          p.numero,
+          p.complemento,
+          l.bairro,
+          l.cod_cidade,
+          c."NOME_CIDADE",
+          mi.cod_uf,
+          p2."ID_PAIS",
+          p2."NOME_PAIS"
+        from
+          pessoas p
+        left join tipos_pessoas tp on
+          p.tipo_pessoa = tp.tipo_pessoa
+        left join logradouros l on
+          p.cod_logradouro = l.cod_logradouro
+        left join cidades c on
+          l.cod_cidade = c."COD_CIDADE"
+        left join municipios_ibge mi on
+          l.cod_cidade = mi.cod_cidade
+        left join paises p2 on
+          c."ID_PAIS" = p2."ID_PAIS"
+        where
+          ($1 = ''
+            or nome ilike '%' || $1 || '%')
+          and ($2 = ''
+            or pessoa_id = cast($2 as INTEGER))
+        order by
+          pessoa_id
+        limit $3 offset $4
+      `,
       [nome, pessoa_id, limit, offset]
     );
 
