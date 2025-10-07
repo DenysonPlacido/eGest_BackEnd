@@ -95,6 +95,7 @@ router.get('/', async (req, res) => {
             or p.nome ilike '%' || $1 || '%')
           and ($2 = ''
             or p.pessoa_id = cast($2 as INTEGER))
+          and p.ativo = true
         order by
           p.pessoa_id
         limit $3 offset $4
