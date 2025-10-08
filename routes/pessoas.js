@@ -61,9 +61,11 @@ router.get('/', async (req, res) => {
       `
         select
           p.pessoa_id,
-          p.tipo_pessoa,
-          tp.descricao,
+          p.data_cadastro,
+          p.tipo_pessoa AS id_tipo_pessoa,
+          tp.descricao AS tipo_pessoa,
           p.cpf_cnpj,
+          p.rg,
           p.nome,
           p.data_nascimento,
           p.ddd,
@@ -76,7 +78,7 @@ router.get('/', async (req, res) => {
           p.complemento,
           l.bairro,
           l.cod_cidade,
-          c.nome_cidade ,
+          c.nome_cidade,
           c.codigo_uf,
           p2.id_pais,
           p2.nome_pais
