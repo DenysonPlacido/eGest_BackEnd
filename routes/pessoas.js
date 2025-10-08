@@ -11,26 +11,39 @@ router.use(autenticar);
 router.post('/', async (req, res) => {
   const {
     tipo_pessoa, cpf_cnpj, nome, data_nascimento,
-    ddd, fone, email, cep, cod_logradouro,
-    numero, cod_bairro, complemento
+    ddd, fone, email, rg, cod_logradouro,
+    numero, complemento, data_cadastro
   } = req.body;
 
-  // ✅ Validação básica
-  if (!cpf_cnpj || !nome || !tipo_pessoa) {
+  if (!cpf_cnpj || !nome || !tipo_pessoa || !email) {
     return res.status(400).json({ error: 'Campos obrigatórios não preenchidos' });
   }
 
   const client = await req.pool.connect();
   try {
     await client.query('BEGIN');
+
     await client.query(
-      `CALL inserir_pessoa($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+      `INSERT INTO pessoas (
+        tipo_pessoa, cpf_cnpj, nome, data_nascimento,
+        ddd, fone, email, rg, cod_logradouro,
+        numero, complemento, versao_registro,
+        data_inclusao, usuario_inclusao, ativo, data_cadastro
+      ) VALUES (
+        $1, $2, $3, $4,
+        $5, $6, $7, $8, $9,
+        $10, $11, 0,
+        CURRENT_TIMESTAMP, $12, true, $13
+      )`,
       [
         tipo_pessoa, cpf_cnpj, nome, data_nascimento,
-        ddd, fone, email, cep, cod_logradouro,
-        numero, cod_bairro, complemento
+        ddd, fone, email, rg, cod_logradouro,
+        numero, complemento,
+        req.user.id, // usuario_inclusao
+        data_cadastro || null // data_cadastro
       ]
     );
+
     await client.query('COMMIT');
     res.json({ status: 'OK', mensagem: 'Pessoa cadastrada com sucesso' });
   } catch (err) {
@@ -38,7 +51,12 @@ router.post('/', async (req, res) => {
     console.error(`❌ Erro ao inserir pessoa (usuário ${req.user.id}):`, err);
 
     if (err.code === '23505') {
-      return res.status(409).json({ error: 'CPF/CNPJ já cadastrado' });
+      if (err.detail.includes('cpf_cnpj')) {
+        return res.status(409).json({ error: 'CPF/CNPJ já cadastrado' });
+      }
+      if (err.detail.includes('email')) {
+        return res.status(409).json({ error: 'E-mail já cadastrado' });
+      }
     }
 
     res.status(500).json({ error: err.message });
@@ -114,65 +132,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ✏️ Atualização de pessoa
-router.put('/:id', async (req, res) => {
-  const { id } = req.params;
-  const {
-    tipo_pessoa, cpf_cnpj, nome, data_nascimento,
-    ddd, fone, email, cep, cod_logradouro,
-    numero, cod_bairro, complemento
-  } = req.body;
 
-  const client = await req.pool.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query(
-      `CALL atualizar_pessoa($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
-      [
-        id, tipo_pessoa, cpf_cnpj, nome, data_nascimento,
-        ddd, fone, email, cep, cod_logradouro,
-        numero, cod_bairro, complemento
-      ]
-    );
-    await client.query('COMMIT');
-    res.json({ status: 'OK', mensagem: `Pessoa ${id} atualizada com sucesso` });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error(`❌ Erro ao atualizar pessoa (usuário ${req.user.id}):`, err);
-    res.status(500).json({ error: err.message });
-  } finally {
-    client.release();
-  }
-});
 
-// 🗑️ Exclusão lógica de pessoa (ativo = false)
-router.delete('/:id', async (req, res) => {
-  const { id } = req.params;
-
-  const client = await req.pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    const result = await client.query(
-      `UPDATE public.pessoas SET ativo = false, data_alteracao = CURRENT_TIMESTAMP, usuario_alteracao = $2 WHERE pessoa_id = $1`,
-      [id, req.user?.id || 'sistema']
-    );
-
-    await client.query('COMMIT');
-
-    if (result.rowCount === 0) {
-      return res.status(404).json({ erro: `Pessoa ${id} não encontrada` });
-    }
-
-    res.json({ status: 'OK', mensagem: `Pessoa ${id} desativada com sucesso` });
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error(`❌ Erro ao desativar pessoa (usuário ${req.user?.id || 'desconhecido'}):`, err);
-    res.status(500).json({ error: 'Erro interno ao desativar pessoa' });
-  } finally {
-    client.release();
-  }
-});
 
 
 // 📍 Busca de endereço por múltiplos critérios
@@ -243,5 +204,115 @@ router.get('/enderecos/buscar', async (req, res) => {
     res.status(500).json({ error: 'Erro interno ao buscar endereço' });
   }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ✏️ Atualização de pessoa
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const {
+    tipo_pessoa, cpf_cnpj, nome, data_nascimento,
+    ddd, fone, email, rg, cod_logradouro,
+    numero, complemento
+  } = req.body;
+
+  const client = await req.pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    await client.query(
+      `UPDATE pessoas SET
+        tipo_pessoa = $1,
+        cpf_cnpj = $2,
+        nome = $3,
+        data_nascimento = $4,
+        ddd = $5,
+        fone = $6,
+        email = $7,
+        rg = $8,
+        cod_logradouro = $9,
+        numero = $10,
+        complemento = $11,
+        cod_bairro = $12,
+        usuario_alteracao = $13,
+        data_alteracao = CURRENT_TIMESTAMP
+      WHERE pessoa_id = $14`,
+      [
+        tipo_pessoa, cpf_cnpj, nome, data_nascimento,
+        ddd, fone, email, rg, cod_logradouro,
+        numero, complemento,
+        req.user.id, // usuario_alteracao
+        id
+      ]
+    );
+
+    await client.query('COMMIT');
+    res.json({ status: 'OK', mensagem: `Pessoa ${id} atualizada com sucesso` });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(`❌ Erro ao atualizar pessoa (usuário ${req.user.id}):`, err);
+
+    if (err.code === '23505') {
+      if (err.detail.includes('cpf_cnpj')) {
+        return res.status(409).json({ error: 'CPF/CNPJ já cadastrado' });
+      }
+      if (err.detail.includes('email')) {
+        return res.status(409).json({ error: 'E-mail já cadastrado' });
+      }
+    }
+
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
+
+
+
+
+
+// 🗑️ Exclusão lógica de pessoa (ativo = false)
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  const client = await req.pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const result = await client.query(
+      `UPDATE public.pessoas SET ativo = false, data_alteracao = CURRENT_TIMESTAMP, usuario_alteracao = $2 WHERE pessoa_id = $1`,
+      [id, req.user?.id || 'sistema']
+    );
+
+    await client.query('COMMIT');
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ erro: `Pessoa ${id} não encontrada` });
+    }
+
+    res.json({ status: 'OK', mensagem: `Pessoa ${id} desativada com sucesso` });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error(`❌ Erro ao desativar pessoa (usuário ${req.user?.id || 'desconhecido'}):`, err);
+    res.status(500).json({ error: 'Erro interno ao desativar pessoa' });
+  } finally {
+    client.release();
+  }
+});
+
+
 
 export default router;
