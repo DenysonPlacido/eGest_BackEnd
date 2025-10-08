@@ -99,7 +99,7 @@ router.get('/', async (req, res) => {
             or p.pessoa_id = cast($2 as INTEGER))
           and p.ativo = true
         order by
-          p.pessoa_id
+          p.nome
         limit $3 offset $4
       `,
       [nome, pessoa_id, limit, offset]
