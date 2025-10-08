@@ -67,8 +67,6 @@ router.post('/', async (req, res) => {
 
 
 
-
-
 // Buscar pessoas
 router.get('/', async (req, res) => {
   const { nome = '', pessoa_id = '', limit = 10, offset = 0 } = req.query;
@@ -131,9 +129,6 @@ router.get('/', async (req, res) => {
     client.release();
   }
 });
-
-
-
 
 
 // 📍 Busca de endereço por múltiplos critérios
@@ -204,19 +199,6 @@ router.get('/enderecos/buscar', async (req, res) => {
     res.status(500).json({ error: 'Erro interno ao buscar endereço' });
   }
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // ✏️ Atualização de pessoa
