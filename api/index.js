@@ -11,6 +11,7 @@ import authRoutes from '../routes/auth.js';
 import menusRoutes from '../routes/menus.js';
 import pessoasRoutes from '../routes/pessoas.js';
 import usuariosRoutes from '../routes/usuarios.js';
+import vendasRoutes from '../routes/vendas.js';
 import autenticar from '../middleware/authMiddleware.js';
 
 const app = express();
@@ -94,5 +95,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/menus',autenticar, menusRoutes);
 app.use('/api/pessoas', autenticar, pessoasRoutes);
 app.use('/api/usuarios', autenticar, usuariosRoutes);
+app.use('/api/vendas', autenticar, vendasRoutes);
 
 export default app;
