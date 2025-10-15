@@ -11,9 +11,9 @@ import authRoutes from '../routes/auth.js';
 import menusRoutes from '../routes/menus.js';
 import pessoasRoutes from '../routes/pessoas.js';
 import usuariosRoutes from '../routes/usuarios.js';
-import produtosRoutes from './routes/produtos.js';
-import estoqueRoutes from './routes/estoque.js';
-import vendasRoutes from './routes/vendas.js';
+import produtosRoutes from '../routes/produtos.js';
+import estoqueRoutes from '../routes/estoque.js';
+import vendasRoutes from '../routes/vendas.js';
 
 app.use('/api/produtos', produtosRoutes);
 app.use('/api/estoque', estoqueRoutes);
@@ -102,8 +102,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/menus',autenticar, menusRoutes);
 app.use('/api/pessoas', autenticar, pessoasRoutes);
 app.use('/api/usuarios', autenticar, usuariosRoutes);
-app.use('/api/produtos', autenticar,produtosRoutes);
-app.use('/api/estoque', autenticar,estoqueRoutes);
-app.use('/api/vendas', autenticar,vendasRoutes);
+app.use('/api/produtos', autenticar, produtosRoutes);
+app.use('/api/estoque', autenticar, estoqueRoutes);
+app.use('/api/vendas', autenticar, vendasRoutes);
 
 export default app;
