@@ -15,8 +15,6 @@ import produtosRoutes from '../routes/produtos.js';
 import estoqueRoutes from '../routes/estoque.js';
 import vendasRoutes from '../routes/vendas.js';
 
-
-
 import autenticar from '../middleware/authMiddleware.js';
 
 const app = express();
