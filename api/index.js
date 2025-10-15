@@ -15,9 +15,7 @@ import produtosRoutes from '../routes/produtos.js';
 import estoqueRoutes from '../routes/estoque.js';
 import vendasRoutes from '../routes/vendas.js';
 
-app.use('/api/produtos', produtosRoutes);
-app.use('/api/estoque', estoqueRoutes);
-app.use('/api/vendas', vendasRoutes);
+
 
 import autenticar from '../middleware/authMiddleware.js';
 
