@@ -13,6 +13,11 @@ router.post('/', async (req, res) => {
   const usuario_id = req.user.id;
   const client = await req.pool.connect();
 
+
+  if (!fornecedor_id || !Array.isArray(itens) || itens.length === 0) {
+  return res.status(400).json({ error: 'Fornecedor e itens são obrigatórios' });
+}
+
   try {
     await client.query('BEGIN');
 
