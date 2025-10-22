@@ -38,6 +38,7 @@ router.get('/', async (req, res) => {
                       m.id = pmp.menu_id
                     where
                       u.id = $1
+                      and m.ativo = true
                       and m.ordem is not null
                     order by
                       m.ordem asc;
