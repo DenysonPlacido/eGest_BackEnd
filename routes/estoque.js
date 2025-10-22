@@ -5,52 +5,246 @@ import autenticar from '../middleware/authMiddleware.js';
 const router = express.Router();
 router.use(autenticar);
 
-// 📦 Entrada de estoque
-router.post('/entrada', async (req, res) => {
-  const { produto_id, qtd_unidade, peso_total, origem, referencia_id } = req.body;
+/* =========================================================
+   🏭 CADASTRAR ESTOQUE
+========================================================= */
+router.post('/', async (req, res) => {
+  const { localizacao, responsavel_id } = req.body;
   const usuario_id = req.user.id;
+  const client = await req.pool.connect();
 
   try {
-    await req.pool.query(
-      `CALL public.sp_entrada_estoque($1, $2, $3, $4, $5, $6)`,
-      [produto_id, qtd_unidade, peso_total, origem, referencia_id, usuario_id]
+    await client.query('BEGIN');
+
+    await client.query(
+      `INSERT INTO public.estoque (
+        localizacao, responsavel, usuario_inclusao, data_inclusao, ativo
+      ) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, TRUE)`,
+      [localizacao, responsavel_id, usuario_id]
     );
-    res.json({ status: 'OK', mensagem: 'Entrada de estoque registrada com sucesso' });
+
+    await client.query('COMMIT');
+    res.json({ status: 'OK', mensagem: 'Estoque cadastrado com sucesso' });
   } catch (err) {
-    console.error('❌ Erro na entrada de estoque:', err);
+    await client.query('ROLLBACK');
+    console.error('❌ Erro ao cadastrar estoque:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
+/* =========================================================
+   🔍 LISTAR ESTOQUES
+========================================================= */
+router.get('/', async (req, res) => {
+  try {
+    const result = await req.pool.query(
+      `SELECT 
+          e.estoque_id,
+          e.localizacao,
+          e.responsavel,
+          u.nome_completo AS responsavel_nome,
+          e.data_inclusao,
+          e.ativo
+       FROM public.estoque e
+       LEFT JOIN public.usuarios u ON e.responsavel = u.id
+      WHERE e.ativo = TRUE
+      ORDER BY e.localizacao ASC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('❌ Erro ao listar estoques:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 📉 Consulta de saldo de estoque
-router.get('/saldo/:id', async (req, res) => {
-  const { id } = req.params;
+/* =========================================================
+   📦 CADASTRAR ITEM NO ESTOQUE
+========================================================= */
+router.post('/:estoque_id/itens', async (req, res) => {
+  const { estoque_id } = req.params;
+  const {
+    descricao_item,
+    tipo_medicao,
+    peso_unitario,
+    estoque_unidade,
+    estoque_peso,
+    custo_unitario,
+    custo_grama,
+    valor_venda
+  } = req.body;
+
+  const usuario_id = req.user.id;
+  const client = await req.pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    await client.query(
+      `INSERT INTO public.estoque_item (
+        estoque_id, descricao_item, tipo_medicao, peso_unitario,
+        estoque_unidade, estoque_peso, custo_unitario, custo_grama,
+        valor_venda, usuario_inclusao, data_inclusao, ativo
+      ) VALUES (
+        $1, $2, $3, $4,
+        $5, $6, $7, $8,
+        $9, $10, CURRENT_TIMESTAMP, TRUE
+      )`,
+      [
+        estoque_id, descricao_item, tipo_medicao, peso_unitario,
+        estoque_unidade, estoque_peso, custo_unitario, custo_grama,
+        valor_venda, usuario_id
+      ]
+    );
+
+    await client.query('COMMIT');
+    res.json({ status: 'OK', mensagem: 'Item cadastrado no estoque com sucesso' });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('❌ Erro ao cadastrar item no estoque:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
+/* =========================================================
+   🔍 LISTAR ITENS DE UM ESTOQUE
+========================================================= */
+router.get('/:estoque_id/itens', async (req, res) => {
+  const { estoque_id } = req.params;
   try {
     const result = await req.pool.query(
-      `SELECT produto_id, descricao, estoque_unidade, estoque_peso
-         FROM public.produtos
-        WHERE produto_id = $1`,
-      [id]
+      `SELECT 
+          i.item_id,
+          i.descricao_item,
+          i.tipo_medicao,
+          i.peso_unitario,
+          i.estoque_unidade,
+          i.estoque_peso,
+          i.custo_unitario,
+          i.custo_grama,
+          i.valor_venda,
+          i.data_inclusao,
+          i.ativo
+       FROM public.estoque_item i
+      WHERE i.estoque_id = $1
+        AND i.ativo = TRUE
+      ORDER BY i.descricao_item ASC`,
+      [estoque_id]
     );
-    if (result.rows.length === 0) return res.status(404).json({ erro: 'Produto não encontrado' });
-    res.json(result.rows[0]);
+    res.json(result.rows);
   } catch (err) {
-    console.error('❌ Erro ao consultar saldo de estoque:', err);
+    console.error('❌ Erro ao listar itens:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 📜 Histórico de movimentações
-router.get('/movimentos/:produto_id', async (req, res) => {
-  const { produto_id } = req.params;
+/* =========================================================
+   🔄 MOVIMENTAR ESTOQUE (ENTRADA / SAÍDA)
+========================================================= */
+router.post('/movimentar', async (req, res) => {
+  const {
+    item_id,
+    tipo_movimento,   // 'ENTRADA' ou 'SAIDA'
+    origem,
+    referencia_id,
+    quantidade_unidade,
+    quantidade_peso
+  } = req.body;
+
+  const usuario_id = req.user.id;
+  const client = await req.pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // Validação de tipo
+    if (!['ENTRADA', 'SAIDA'].includes(tipo_movimento.toUpperCase())) {
+      throw new Error("Tipo de movimento inválido. Use 'ENTRADA' ou 'SAIDA'.");
+    }
+
+    // Busca o item atual
+    const itemResult = await client.query(
+      `SELECT estoque_unidade, estoque_peso FROM public.estoque_item WHERE item_id = $1`,
+      [item_id]
+    );
+    if (itemResult.rowCount === 0) throw new Error(`Item ${item_id} não encontrado`);
+
+    let novoEstoqueUnidade = itemResult.rows[0].estoque_unidade;
+    let novoEstoquePeso = itemResult.rows[0].estoque_peso;
+
+    // Calcula novo saldo
+    if (tipo_movimento === 'ENTRADA') {
+      novoEstoqueUnidade += quantidade_unidade || 0;
+      novoEstoquePeso += quantidade_peso || 0;
+    } else if (tipo_movimento === 'SAIDA') {
+      novoEstoqueUnidade -= quantidade_unidade || 0;
+      novoEstoquePeso -= quantidade_peso || 0;
+    }
+
+    if (novoEstoqueUnidade < 0 || novoEstoquePeso < 0) {
+      throw new Error('Movimentação inválida: saldo insuficiente.');
+    }
+
+    // Atualiza estoque
+    await client.query(
+      `UPDATE public.estoque_item
+          SET estoque_unidade = $2,
+              estoque_peso = $3,
+              usuario_alteracao = $4,
+              data_alteracao = CURRENT_TIMESTAMP
+        WHERE item_id = $1`,
+      [item_id, novoEstoqueUnidade, novoEstoquePeso, usuario_id]
+    );
+
+    // Registra movimento
+    await client.query(
+      `INSERT INTO public.movimentos_estoque (
+        item_id, tipo_movimento, origem, referencia_id,
+        quantidade_unidade, quantidade_peso,
+        usuario_inclusao, data_inclusao, data_movimento, ativo
+      ) VALUES (
+        $1, $2, $3, $4,
+        $5, $6,
+        $7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, TRUE
+      )`,
+      [item_id, tipo_movimento, origem, referencia_id, quantidade_unidade, quantidade_peso, usuario_id]
+    );
+
+    await client.query('COMMIT');
+    res.json({ status: 'OK', mensagem: `Movimentação ${tipo_movimento} registrada com sucesso` });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('❌ Erro ao movimentar estoque:', err);
+    res.status(500).json({ error: err.message });
+  } finally {
+    client.release();
+  }
+});
+
+/* =========================================================
+   📜 CONSULTAR HISTÓRICO DE MOVIMENTOS DE UM ITEM
+========================================================= */
+router.get('/itens/:item_id/movimentos', async (req, res) => {
+  const { item_id } = req.params;
   try {
     const result = await req.pool.query(
-      `SELECT m.*, p.descricao
-         FROM public.movimentos_estoque m
-         JOIN public.produtos p ON p.produto_id = m.produto_id
-        WHERE m.produto_id = $1
-        ORDER BY m.data_inclusao DESC`,
-      [produto_id]
+      `SELECT 
+          m.movimento_id,
+          m.tipo_movimento,
+          m.origem,
+          m.referencia_id,
+          m.quantidade_unidade,
+          m.quantidade_peso,
+          m.data_movimento,
+          u.nome_completo AS usuario
+       FROM public.movimentos_estoque m
+       LEFT JOIN public.usuarios u ON m.usuario_inclusao = u.id
+      WHERE m.item_id = $1
+      ORDER BY m.data_movimento DESC`,
+      [item_id]
     );
     res.json(result.rows);
   } catch (err) {
