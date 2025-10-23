@@ -34,10 +34,10 @@ router.post('/', async (req, res) => {
         )
         RETURNING compra_id`,
         [
-          fornecedor_id || 0,       // $1
-          observacao || '',         // $2
-          usuario_id || 0,          // $3 (responsável)
-          usuario_inclusao || 0    // $4
+          fornecedor_id || 0, 
+          observacao || '',
+          usuario_id || 0,
+          usuario_inclusao || 0
         ]
       );
 
