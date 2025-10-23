@@ -19,29 +19,30 @@ router.post('/', async (req, res) => {
   try {
     await client.query('BEGIN');
 
-      // 1️⃣ Cria a compra
-      const compraResult = await client.query(
-        `INSERT INTO public.compras (
-            compra_id, fornecedor_id, data_compra, status, valor_total,
-            observacao, usuario_responsavel, versao_registro,
-            data_inclusao, usuario_inclusao, data_alteracao,
-            usuario_alteracao, ativo
-        ) VALUES (
-            nextval('compras_compra_id_seq'::regclass),
-            $1, CURRENT_TIMESTAMP, 'ABERTA', 0,
-            $2, $3, 0,
-            CURRENT_TIMESTAMP, $4, '', '', true
-        )
-        RETURNING compra_id`,
-        [
-          fornecedor_id || 0, 
-          observacao || '',
-          usuario_id || 0,
-          usuario_inclusao || 0
-        ]
-      );
+// 1️⃣ Cria a compra
+const compraResult = await client.query(
+  `INSERT INTO public.compras (
+      compra_id, fornecedor_id, data_compra, status, valor_total,
+      observacao, usuario_responsavel, versao_registro,
+      data_inclusao, usuario_inclusao, data_alteracao,
+      usuario_alteracao, ativo
+  ) VALUES (
+      nextval('compras_compra_id_seq'::regclass),
+      $1, CURRENT_TIMESTAMP, 'ABERTA', 0,
+      $2, $3, 0,
+      CURRENT_TIMESTAMP, $4, NULL, NULL, true
+  )
+  RETURNING compra_id`,
+  [
+    fornecedor_id || 0,       // $1
+    observacao || '',         // $2
+    usuario_id || 0,          // $3 (responsável)
+    usuario_inclusao || ''    // $4 (usuário_inclusao)
+  ]
+);
 
-      const compra_id = compraResult.rows[0].compra_id;
+const compra_id = compraResult.rows[0].compra_id;
+
 
     // 2️⃣ Adiciona itens e calcula o total
     let totalCompra = 0;
