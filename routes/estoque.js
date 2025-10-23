@@ -44,11 +44,12 @@ router.get('/', async (req, res) => {
           e.estoque_id,
           e.localizacao,
           e.responsavel,
-          u.nome_completo AS responsavel_nome,
+          P.NOME AS responsavel_nome,
           e.data_inclusao,
           e.ativo
        FROM public.estoque e
        LEFT JOIN public.usuarios u ON e.responsavel = u.id
+       left join pessoas p on U.pessoa_id  = p.pessoa_id 
       WHERE e.ativo = TRUE
       ORDER BY e.localizacao ASC`
     );
