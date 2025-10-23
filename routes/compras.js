@@ -37,7 +37,7 @@ router.post('/', async (req, res) => {
           fornecedor_id || 0,       // $1
           observacao || '',         // $2
           usuario_id || 0,          // $3 (responsável)
-          usuario_inclusao || ''    // $4
+          usuario_inclusao || 0    // $4
         ]
       );
 
