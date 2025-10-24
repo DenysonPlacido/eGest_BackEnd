@@ -113,9 +113,14 @@ router.post('/:estoque_id/itens', async (req, res) => {
 /* =========================================================
    🔍 LISTAR ITENS DE UM ESTOQUE
 ========================================================= */
-router.get('/:estoque_id/itens', async (req, res) => {
-  const { item_id = '', descricao_item = '', limit = 10, offset = 0 } = req.query;
-  const { estoque_id } = req.params;
+router.get('/itens', async (req, res) => {
+  const {
+    estoque_id = '',
+    item_id = '',
+    descricao_item = '',
+    limit = 10,
+    offset = 0
+  } = req.query;
 
   try {
     const result = await req.pool.query(
