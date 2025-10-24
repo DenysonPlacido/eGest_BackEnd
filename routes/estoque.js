@@ -114,26 +114,40 @@ router.post('/:estoque_id/itens', async (req, res) => {
    🔍 LISTAR ITENS DE UM ESTOQUE
 ========================================================= */
 router.get('/:estoque_id/itens', async (req, res) => {
+  const { item_id = '', descricao_item = '', limit = 10, offset = 0 } = req.query;
   const { estoque_id } = req.params;
+
   try {
     const result = await req.pool.query(
-      `SELECT 
-          i.item_id,
-          i.descricao_item,
-          i.tipo_medicao,
-          i.peso_unitario,
-          i.estoque_unidade,
-          i.estoque_peso,
-          i.custo_unitario,
-          i.custo_grama,
-          i.valor_venda,
-          i.data_inclusao,
-          i.ativo
-       FROM public.estoque_item i
-      WHERE i.estoque_id = $1
-        AND i.ativo = TRUE
-      ORDER BY i.descricao_item ASC`,
-      [estoque_id]
+      `
+      SELECT
+        i.item_id,
+        i.descricao_item,
+        e.estoque_id,
+        e.localizacao,
+        i.tipo_medicao,
+        i.peso_unitario,
+        i.estoque_unidade,
+        i.estoque_peso,
+        i.custo_unitario,
+        i.custo_grama,
+        i.valor_venda,
+        i.data_inclusao,
+        i.ativo
+      FROM
+        public.estoque_item i
+      JOIN public.estoque e ON i.estoque_id = e.estoque_id
+      WHERE
+        i.ativo = TRUE
+        AND e.ativo = TRUE
+        AND (NULLIF($1, '') IS NULL OR i.estoque_id = CAST($1 AS INTEGER))
+        AND (NULLIF($2, '') IS NULL OR i.item_id = CAST($2 AS INTEGER))
+        AND (NULLIF($3, '') IS NULL OR i.descricao_item ILIKE '%' || $3 || '%')
+      ORDER BY
+        i.item_id ASC
+      LIMIT $4 OFFSET $5
+      `,
+      [estoque_id, item_id, descricao_item, limit, offset]
     );
     res.json(result.rows);
   } catch (err) {
