@@ -113,7 +113,7 @@ router.post('/:estoque_id/itens', async (req, res) => {
 /* =========================================================
    🔍 LISTAR ITENS DE UM ESTOQUE
 ========================================================= */
-router.get('/itens', async (req, res) => {
+router.get('/itemestoque', async (req, res) => {
   const {
     estoque_id = '',
     item_id = '',
